@@ -178,7 +178,7 @@ Windows Event IDs provide valuable insight into authentication activity, account
 | 4634     | Logoff                                   |
 | 4648     | Logon Attempt Using Explicit Credentials |
 | 4672     | Special Privileges Assigned              |
-| 4688     | Process Creation(One of the most valuable events during investigations) |                        |
+| 4688     | Process Creation(One of the most valuable events during investigations) |    
 | 4720     | User Account Created                     |
 | 4726     | User Account Deleted                     |
 | 4728     | Added to Privileged Group                |
@@ -648,6 +648,13 @@ After completing this fundamentals section, I feel much more comfortable navigat
 More importantly, I now have a better understanding of how SIEM platforms collect, process, and transform raw security logs into actionable information for analysts.
 
 
+## SOC Analyst Perspective
+
+While learning Splunk fundamentals, I realized that the platform itself is only part of the investigation process.
+
+The real value comes from understanding how logs are generated, how events relate to one another, and how analysts can transform raw data into actionable security insights.
+
+Whether investigating phishing activity, suspicious authentication attempts, lateral movement, or privilege escalation, the ability to efficiently search and correlate logs remains one of the most important skills for a SOC analyst.
 
 
 

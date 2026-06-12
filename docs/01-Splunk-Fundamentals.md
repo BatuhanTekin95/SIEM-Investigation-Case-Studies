@@ -12,6 +12,10 @@ In this section, I explore the fundamental concepts behind Splunk, one of the mo
 
 ## Logs Everywhere
 
+<img width="1402" height="1122" alt="e72125fa-4a33-4727-8e18-aae2fafff91b" src="https://github.com/user-attachments/assets/17862fa7-7641-426f-8786-1e374ff16ccb" />
+
+> Example enterprise environment illustrating how logs are generated across multiple systems. Every authentication attempt, web request, file access, and network connection leaves behind valuable evidence that can later be collected, correlated, and investigated by security analysts.
+
 Modern networks consist of many different systems communicating with each other, including workstations, servers, websites, routers, and cloud services. Every interaction within these systems generates logs that record activities occurring across the environment.
 
 These logs provide valuable visibility into user actions, system behavior, network communications, and potential security incidents. For SOC analysts, logs serve as one of the most important sources of evidence during investigations and threat hunting activities.
@@ -142,13 +146,6 @@ By presenting data visually, dashboards help analysts quickly identify anomalies
 
 ---
 
-## Key Takeaway
-
-Modern environments generate enormous amounts of security data every day. SIEM platforms address the challenges of log management by centralizing collection, normalizing data, correlating events, generating alerts, and presenting information through dashboards.
-
-At this stage, I have focused on understanding the fundamental concepts behind SIEM and why these platforms are essential for security operations. In the following sections, I will explore how Splunk implements these concepts and how data is ingested, indexed, searched, and analyzed within the platform.
-
----
 
 ## Log Ingestion
 
@@ -194,9 +191,15 @@ Every device within a network generates logs whenever an action occurs. Whether 
 
 These records become the foundation of security monitoring and incident investigations.
 
+
+
+
+
 ### Windows Logs
 
 Windows systems generate a large number of security, application, and system events that can be viewed through Event Viewer.
+
+> Event Viewer is the native Windows utility used to review system, application, and security logs. Many of the events collected by SIEM platforms such as Splunk originate from Windows Event Logs, making Event Viewer an important tool for understanding the source of security-relevant events and Event IDs.
 
 Each event is assigned a unique Event ID, allowing analysts to quickly identify specific activities such as authentication attempts, account changes, service creation, process execution, and many other system actions.
 
@@ -279,6 +282,10 @@ This investigation process helps security teams separate legitimate activity fro
 
 ## Splunk Architecture
 
+<img width="1721" height="914" alt="46fc498d-4ad0-48a7-9059-dc883f201ba0" src="https://github.com/user-attachments/assets/fb5af649-5022-42e1-bab5-14ab34e8be59" />
+
+> Simplified Splunk data pipeline showing how security logs move from various data sources through Forwarders and Indexers before becoming searchable through the Search Head. This architecture enables centralized log management, efficient investigations, and faster threat detection.
+
 After exploring how logs are collected and ingested into a SIEM, I wanted to understand how Splunk processes and manages this data behind the scenes.
 
 One of the first concepts I encountered was Splunk's core architecture. At a high level, Splunk relies on three primary components that work together to collect, store, and analyze security data:
@@ -347,7 +354,12 @@ As I continued exploring Splunk, it became clear that the platform is not only d
 
 ## Navigating the Splunk Interface
 
-Before performing searches and investigations, I spent some time exploring the default Splunk interface to understand how the platform is organized.
+Rather than covering every menu in detail, I focused on the areas I would use most frequently as a SOC analyst:
+
+• Search & Reporting
+• Dashboards
+• Data Upload
+• Search Bar
 
 ### Splunk Bar
 
@@ -426,7 +438,9 @@ After the data was successfully indexed, I switched to the Search & Reporting ap
 
 ## Exploring Indexed Data
 
-After completing the ingestion process, I opened the Search & Reporting application and verified that the VPN dataset had been indexed successfully.
+<img width="1912" height="735" alt="Ekran görüntüsü 2026-06-12 152534" src="https://github.com/user-attachments/assets/227fc245-c8ae-46b5-a5c1-386e6e72e919" />
+
+> After completing the ingestion process, I opened the Search & Reporting application to confirm that the VPN dataset had been indexed successfully. The search returned 2,812 events, confirming that the uploaded data had been processed correctly and was ready for analysis.
 
 To retrieve the uploaded events, I searched using the following metadata fields:
 
@@ -486,6 +500,42 @@ This is not a default Splunk index. During the data ingestion process, I created
 
 Depending on the environment, analysts may work with different index names such as `main`, `wineventlog`, `firewall`, or custom indexes created for specific data sources.
 
+### Understanding Common SPL Operators
+
+While working with SPL, I quickly noticed that a few symbols appear repeatedly in almost every search. Understanding these operators makes it much easier to read and build more complex queries.
+
+| Symbol / Operator | Purpose                                                              |                                                                                    |
+| ----------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `                 | `                                                                    | Pipes the results of one command into another command. Similar to piping in Linux. |
+| `=`               | Searches for an exact field value match.                             |                                                                                    |
+| `!=`              | Excludes events matching a specific value.                           |                                                                                    |
+| `*`               | Wildcard character used to match multiple values or partial strings. |                                                                                    |
+| `"` `"`           | Used when searching for exact phrases or values containing spaces.   |                                                                                    |
+| `()`              | Groups conditions together within a search expression.               |                                                                                    |
+
+Some examples:
+
+```spl
+index=VPN_logs | stats count by UserName
+```
+
+Returns events from the VPN_logs index and passes them to the `stats` command for aggregation.
+
+```spl
+index=VPN_logs Source_Country!="France"
+```
+
+Returns all events except those originating from France.
+
+```spl
+index=VPN_logs UserName="Maleena"
+```
+
+Returns only events associated with the specified username.
+
+As I continued using Splunk, the pipe operator (`|`) became one of the most important concepts to understand because it allows searches to be chained together and transformed step by step into meaningful results.
+
+
 ### Why These Commands Matter
 
 While working through the VPN log dataset, I realized that most investigations follow the same general workflow:
@@ -517,6 +567,10 @@ Some of the key concepts covered included:
 To reinforce these concepts, I uploaded a VPN log dataset into Splunk, created a dedicated index, and performed several searches using SPL.
 
 With the fundamentals in place, the next step is applying these concepts during real-world investigations and security monitoring scenarios.
+
+After completing this fundamentals section, I feel much more comfortable navigating Splunk, ingesting datasets, creating indexes, and performing basic SPL searches.
+
+More importantly, I now have a better understanding of how SIEM platforms collect, process, and transform raw security logs into actionable information for analysts.
 
 
 

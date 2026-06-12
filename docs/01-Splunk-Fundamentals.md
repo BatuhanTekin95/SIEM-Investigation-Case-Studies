@@ -147,40 +147,6 @@ By presenting data visually, dashboards help analysts quickly identify anomalies
 ---
 
 
-## Log Ingestion
-
-After understanding why SIEM platforms are necessary, the next question I had was simple: how does all of this data actually reach the SIEM?
-
-Before analysts can search, correlate, or investigate events, logs first need to be collected and ingested into the platform. Different SIEM solutions support multiple ingestion methods depending on the environment and the type of data being collected.
-
-Some of the most common ingestion methods include:
-
-### Agents and Forwarders
-
-One of the most common approaches is using lightweight agents installed on endpoints and servers.
-
-In Splunk, this role is performed by the Universal Forwarder, which is responsible for collecting selected logs and securely forwarding them to the Splunk instance for indexing and analysis.
-
-### Syslog
-
-Many network devices and servers use the Syslog protocol to transmit log data.
-
-Firewalls, routers, web servers, and other infrastructure components can send events in real time to a centralized SIEM platform, providing continuous visibility into network activity.
-
-### Manual Upload
-
-Some SIEM solutions allow analysts to upload log files directly into the platform.
-
-While this approach is not typically used for continuous monitoring, it can be useful during investigations when examining offline log files or imported datasets.
-
-### Port-Based Collection
-
-SIEM platforms can also listen on specific network ports and receive events directly from configured devices.
-
-This method is commonly used when systems are configured to forward logs to a central collector without requiring additional agents.
-
-Regardless of the collection method used, the goal remains the same: bringing data from multiple sources into a centralized platform where it can be parsed, indexed, and analyzed.
-
 ---
 
 ## Common Log Sources
@@ -242,6 +208,40 @@ Although these logs originate from different operating systems, applications, an
 
 By aggregating data from Windows systems, Linux hosts, web servers, databases, and network infrastructure, analysts gain a unified view of activity across the environment. This visibility makes it much easier to detect threats, investigate incidents, and understand how different events are connected.
 
+## Log Ingestion
+
+After understanding why SIEM platforms are necessary, the next question I had was simple: how does all of this data actually reach the SIEM?
+
+Before analysts can search, correlate, or investigate events, logs first need to be collected and ingested into the platform. Different SIEM solutions support multiple ingestion methods depending on the environment and the type of data being collected.
+
+Some of the most common ingestion methods include:
+
+### Agents and Forwarders
+
+One of the most common approaches is using lightweight agents installed on endpoints and servers.
+
+In Splunk, this role is performed by the Universal Forwarder, which is responsible for collecting selected logs and securely forwarding them to the Splunk instance for indexing and analysis.
+
+### Syslog
+
+Many network devices and servers use the Syslog protocol to transmit log data.
+
+Firewalls, routers, web servers, and other infrastructure components can send events in real time to a centralized SIEM platform, providing continuous visibility into network activity.
+
+### Manual Upload
+
+Some SIEM solutions allow analysts to upload log files directly into the platform.
+
+While this approach is not typically used for continuous monitoring, it can be useful during investigations when examining offline log files or imported datasets.
+
+### Port-Based Collection
+
+SIEM platforms can also listen on specific network ports and receive events directly from configured devices.
+
+This method is commonly used when systems are configured to forward logs to a central collector without requiring additional agents.
+
+Regardless of the collection method used, the goal remains the same: bringing data from multiple sources into a centralized platform where it can be parsed, indexed, and analyzed.
+
 ---
 
 ## Detection Rules and Alerting
@@ -284,7 +284,7 @@ This investigation process helps security teams separate legitimate activity fro
 
 <img width="1721" height="914" alt="46fc498d-4ad0-48a7-9059-dc883f201ba0" src="https://github.com/user-attachments/assets/fb5af649-5022-42e1-bab5-14ab34e8be59" />
 
-> Simplified Splunk data pipeline showing how security logs move from various data sources through Forwarders and Indexers before becoming searchable through the Search Head. This architecture enables centralized log management, efficient investigations, and faster threat detection.
+> Simplified Splunk data pipeline showing how logs move from data sources through Forwarders and Indexers before becoming searchable through the Search Head. Understanding this workflow helps analysts identify where data is collected, stored, and queried during security investigations.
 
 After exploring how logs are collected and ingested into a SIEM, I wanted to understand how Splunk processes and manages this data behind the scenes.
 
@@ -313,6 +313,9 @@ Common data sources forwarded to Splunk include:
 
 In a typical environment, forwarders act as the entry point of the data pipeline, continuously sending events to Splunk for analysis.
 
+> In larger environments, organizations may also use Heavy Forwarders. Unlike Universal Forwarders, Heavy Forwarders can perform parsing, filtering, and routing before forwarding data to Indexers, making them useful in more complex deployments.
+
+
 ### Indexer
 
 Once data is received from forwarders, it is processed by the Splunk Indexer.
@@ -320,6 +323,9 @@ Once data is received from forwarders, it is processed by the Splunk Indexer.
 The indexer is responsible for parsing, organizing, and storing incoming events. During this process, raw log data is transformed into searchable information that can later be queried by analysts.
 
 By indexing events efficiently, Splunk enables fast searches across large volumes of security data, making investigations significantly more practical.
+
+> Indexers are optimized for storing and searching large volumes of machine-generated data. By organizing events into indexes, Splunk can perform fast searches across millions of records, allowing analysts to quickly retrieve relevant information during investigations.
+
 
 ### Search Head
 
@@ -330,6 +336,10 @@ It provides the Search & Reporting interface where users can perform searches, i
 Searches are performed using SPL (Search Processing Language), Splunk's query language designed for exploring and analyzing indexed data.
 
 When a search is executed, the Search Head sends the request to the appropriate indexers, retrieves matching events, and presents the results to the analyst.
+
+> Together, these three components form the foundation of a Splunk deployment. Data is collected by Forwarders, processed and stored by Indexers, and finally accessed through the Search Head, where analysts perform searches, investigations, and threat hunting activities.
+
+
 
 ### Data Visualization
 

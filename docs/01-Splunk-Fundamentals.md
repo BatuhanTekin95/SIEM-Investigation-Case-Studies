@@ -167,6 +167,28 @@ Windows systems generate a large number of security, application, and system eve
 
 > Event Viewer is the native Windows utility used to review system, application, and security logs. Many of the events collected by SIEM platforms such as Splunk originate from Windows Event Logs, making Event Viewer an important tool for understanding the source of security-relevant events and Event IDs.
 
+### Important Windows Security Event IDs
+
+Windows Event IDs provide valuable insight into authentication activity, account management, process execution, and system changes. Security analysts frequently monitor these events during investigations and threat hunting activities.
+
+| Event ID | Description                              |
+| -------- | ---------------------------------------- |
+| 4624     | Successful Logon                         |
+| 4625     | Failed Logon                             |
+| 4634     | Logoff                                   |
+| 4648     | Logon Attempt Using Explicit Credentials |
+| 4672     | Special Privileges Assigned              |
+| 4688     | Process Creation                         |
+| 4720     | User Account Created                     |
+| 4726     | User Account Deleted                     |
+| 4728     | Added to Privileged Group                |
+| 4732     | Added to Local Group                     |
+| 4740     | Account Locked Out                       |
+| 4768     | Kerberos Authentication Ticket Requested |
+| 4769     | Kerberos Service Ticket Requested        |
+| 1102     | Audit Log Cleared                        |
+
+
 Each event is assigned a unique Event ID, allowing analysts to quickly identify specific activities such as authentication attempts, account changes, service creation, process execution, and many other system actions.
 
 Because Windows endpoints are often primary targets during attacks, these logs provide critical visibility during investigations.
@@ -277,6 +299,44 @@ Depending on the findings, possible actions may include:
 
 This investigation process helps security teams separate legitimate activity from genuine threats and respond appropriately.
 
+## Common Threat Hunting Examples
+
+Threat hunting involves proactively searching for indicators of malicious activity that may not have triggered an alert. Rather than waiting for detections, analysts investigate suspicious behavior patterns across logs and endpoints.
+
+Some common hunting scenarios include:
+
+### Suspicious PowerShell Activity
+
+* Encoded PowerShell commands
+* Download-and-execute behavior
+* Unusual parent-child process relationships
+
+### Lateral Movement
+
+* PsExec execution
+* Remote service creation
+* SMB administrative shares
+* WMI execution
+
+### RDP Activity
+
+* Unusual remote logins
+* Authentication attempts outside business hours
+* Connections from unfamiliar locations
+
+### Privilege Escalation
+
+* New administrator accounts
+* Group membership changes
+* Privileged logons
+
+### Log Tampering
+
+* Event ID 1102 (Audit Log Cleared)
+* Sudden logging gaps
+* Security service modifications
+
+These examples represent common areas analysts investigate when searching for signs of attacker activity within an environment.
 
 ---
 
@@ -286,7 +346,7 @@ This investigation process helps security teams separate legitimate activity fro
 
 > Simplified Splunk data pipeline showing how logs move from data sources through Forwarders and Indexers before becoming searchable through the Search Head. Understanding this workflow helps analysts identify where data is collected, stored, and queried during security investigations.
 
-After exploring how logs are collected and ingested into a SIEM, I wanted to understand how Splunk processes and manages this data behind the scenes.
+After exploring how logs are collected, ingested, and analyzed within a SIEM, I wanted to understand how Splunk handles this data behind the scenes. To do that, it is important to understand the core components that make up a Splunk deployment and how they work together throughout the data pipeline.
 
 One of the first concepts I encountered was Splunk's core architecture. At a high level, Splunk relies on three primary components that work together to collect, store, and analyze security data:
 
@@ -458,8 +518,6 @@ To retrieve the uploaded events, I searched using the following metadata fields:
 source="VPNlogs.json" host="Vpn_logs" index="vpn_logs" sourcetype="_json"
 ```
 
-This search returned 2,812 events, confirming that the VPN log file had been processed and stored correctly within Splunk.
-
 One thing that immediately stood out to me was how Splunk automatically extracted fields from the JSON data. Instead of viewing the logs as unstructured text, I could already see individual fields such as:
 
 * Company
@@ -475,7 +533,9 @@ These extracted fields make investigations significantly easier because analysts
 
 Another useful feature visible on the search screen was the event timeline. Splunk automatically generated a visual timeline showing the distribution of events across the selected time range, providing a quick overview of activity patterns within the dataset.
 
-At this stage, the VPN logs were successfully indexed and ready for further analysis using SPL (Search Processing Language).
+At this stage, the VPN logs were successfully indexed and ready for further analysis using SPL (Search Processing Language), Splunk's query language for searching, filtering, and analyzing security data.
+
+
 
 ## Common SPL Commands for SOC Investigations
 

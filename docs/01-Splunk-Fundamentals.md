@@ -147,7 +147,6 @@ By presenting data visually, dashboards help analysts quickly identify anomalies
 ---
 
 
----
 
 ## Common Log Sources
 
@@ -178,7 +177,7 @@ Windows Event IDs provide valuable insight into authentication activity, account
 | 4634     | Logoff                                   |
 | 4648     | Logon Attempt Using Explicit Credentials |
 | 4672     | Special Privileges Assigned              |
-| 4688     | Process Creation                         |
+| 4688     | Process Creation(One of the most valuable events during investigations) |                        |
 | 4720     | User Account Created                     |
 | 4726     | User Account Deleted                     |
 | 4728     | Added to Privileged Group                |
@@ -561,6 +560,7 @@ At this stage, the VPN logs were successfully indexed and ready for further anal
 | `index=VPN_logs Source_Country!="France"`                     | Exclude events matching a specific value.                  |
 | `index=VPN_logs \| chart count by Source_Country`             | Create a chart showing event counts by country.            |
 | `index=VPN_logs \| timechart count`                           | Visualize event volume over time.                          |
+| `index=VPN_logs \| stats dc(UserName)`                        | Count unique usernames.                                    |
 
 ### Note on the Index Name
 

@@ -275,6 +275,252 @@ Depending on the findings, possible actions may include:
 This investigation process helps security teams separate legitimate activity from genuine threats and respond appropriately.
 
 
+---
+
+## Splunk Architecture
+
+After exploring how logs are collected and ingested into a SIEM, I wanted to understand how Splunk processes and manages this data behind the scenes.
+
+One of the first concepts I encountered was Splunk's core architecture. At a high level, Splunk relies on three primary components that work together to collect, store, and analyze security data:
+
+- Forwarder
+- Indexer
+- Search Head
+
+Understanding the role of each component helped me better understand how data flows through a Splunk environment.
+
+### Forwarder
+
+The Splunk Forwarder is a lightweight agent installed on endpoints, servers, and other systems that generate logs.
+
+Its primary responsibility is to collect relevant data and securely forward it to the Splunk platform for processing. Because the forwarder performs minimal processing, it has little impact on the performance of the systems where it is installed.
+
+Common data sources forwarded to Splunk include:
+
+- Windows Event Logs
+- PowerShell logs
+- Sysmon events
+- Linux system logs
+- Web server logs
+- Database activity logs
+
+In a typical environment, forwarders act as the entry point of the data pipeline, continuously sending events to Splunk for analysis.
+
+### Indexer
+
+Once data is received from forwarders, it is processed by the Splunk Indexer.
+
+The indexer is responsible for parsing, organizing, and storing incoming events. During this process, raw log data is transformed into searchable information that can later be queried by analysts.
+
+By indexing events efficiently, Splunk enables fast searches across large volumes of security data, making investigations significantly more practical.
+
+### Search Head
+
+The Search Head is the component analysts interact with most frequently.
+
+It provides the Search & Reporting interface where users can perform searches, investigate events, create reports, and build dashboards.
+
+Searches are performed using SPL (Search Processing Language), Splunk's query language designed for exploring and analyzing indexed data.
+
+When a search is executed, the Search Head sends the request to the appropriate indexers, retrieves matching events, and presents the results to the analyst.
+
+### Data Visualization
+
+Beyond searching and investigation, Splunk also provides powerful visualization capabilities.
+
+Search results can be transformed into:
+
+- Tables
+- Pie charts
+- Line graphs
+- Bar charts
+- Column charts
+- Geographic maps
+- Dashboards
+
+These visualizations help analysts quickly identify trends, monitor activity, and communicate findings more effectively.
+
+As I continued exploring Splunk, it became clear that the platform is not only designed for searching logs but also for turning large volumes of data into meaningful and actionable insights.
+
+
+---
+
+## Navigating the Splunk Interface
+
+Before performing searches and investigations, I spent some time exploring the default Splunk interface to understand how the platform is organized.
+
+### Splunk Bar
+
+The Splunk Bar is located at the top of the interface and provides quick access to several administrative and operational functions, including:
+
+- Messages
+- Settings
+- Activity
+- Help
+- Search
+
+This navigation bar makes it easy to move between different areas of the platform and monitor ongoing search activity.
+
+### Apps Panel
+
+Splunk uses apps to extend its functionality and organize workflows.
+
+The default application available in most installations is **Search & Reporting**, which provides the core functionality required for searching, analyzing, and visualizing data.
+
+Additional apps can be installed depending on the organization's requirements.
+
+### Explore Splunk
+
+The Explore Splunk section provides quick access to common administrative tasks such as:
+
+- Adding new data sources
+- Installing Splunk applications
+- Accessing documentation
+
+This area acts as a starting point for configuring and expanding a Splunk deployment.
+
+### Dashboards
+
+Splunk supports customizable dashboards that allow analysts to visualize security data through charts, graphs, and reports.
+
+Dashboards provide a high-level overview of activity within the environment and help analysts quickly identify trends, anomalies, and potential security events.
+
+---
+
+## Adding Data to Splunk
+
+One of the first practical tasks in Splunk is ingesting data for analysis.
+
+Splunk supports a wide range of data sources, including:
+
+- Windows Event Logs
+- Linux Logs
+- Web Server Logs
+- Network Devices
+- Databases
+- Cloud Services
+- Security Products
+
+For this exercise, I worked with VPN log data and uploaded it directly into Splunk using the **Upload** option.
+
+During the ingestion process, Splunk requires several configuration steps:
+
+1. Select the log source
+2. Define the source type
+3. Configure host and index settings
+4. Review the configuration
+5. Complete the ingestion process
+
+Once the data is ingested, it becomes searchable and available for analysis through the Search & Reporting application.
+
+
+### Accessing the Splunk Environment
+
+After connecting to the Splunk Enterprise instance, I uploaded the provided VPN log dataset from my local machine and walked through the ingestion process.
+
+During the upload, Splunk prompted me to define several settings that determine how the data will be stored and searched. One of the most important steps was configuring the input settings, where I assigned a host name to the uploaded data and created a dedicated index for the VPN logs instead of using the default index.
+
+Creating a separate index helped organize the data more effectively and made it easier to isolate the VPN dataset during searches. Once the ingestion process was completed, Splunk parsed and indexed the uploaded events, making them available for analysis.
+
+After the data was successfully indexed, I switched to the Search & Reporting application and selected the newly created index. From there, I began exploring the VPN logs using SPL (Search Processing Language) queries to better understand the structure of the dataset and identify the available fields for investigation.
+
+## Exploring Indexed Data
+
+After completing the ingestion process, I opened the Search & Reporting application and verified that the VPN dataset had been indexed successfully.
+
+To retrieve the uploaded events, I searched using the following metadata fields:
+
+```spl
+source="VPNlogs.json" host="Vpn_logs" index="vpn_logs" sourcetype="_json"
+```
+
+This search returned 2,812 events, confirming that the VPN log file had been processed and stored correctly within Splunk.
+
+One thing that immediately stood out to me was how Splunk automatically extracted fields from the JSON data. Instead of viewing the logs as unstructured text, I could already see individual fields such as:
+
+* Company
+* EventTime
+* Source_ip
+* Source_Country
+* UserName
+* action
+* protocol
+* port
+
+These extracted fields make investigations significantly easier because analysts can filter, search, and correlate data without manually parsing every log entry.
+
+Another useful feature visible on the search screen was the event timeline. Splunk automatically generated a visual timeline showing the distribution of events across the selected time range, providing a quick overview of activity patterns within the dataset.
+
+At this stage, the VPN logs were successfully indexed and ready for further analysis using SPL (Search Processing Language).
+
+## Common SPL Commands for SOC Investigations
+
+| SPL Query                                                     | Purpose                                                    |
+| ------------------------------------------------------------- | ---------------------------------------------------------- |
+| `index=VPN_logs`                                              | Search all events stored in the custom VPN_logs index created during the data ingestion process.|
+| `index=VPN_logs UserName="Maleena"`                           | Filter events for a specific user.                         |
+| `index=VPN_logs Source_ip="107.14.182.38"`                    | Search for activity associated with a specific IP address. |
+| `index=VPN_logs action=failed`                                | Search for specific event types or actions.                |
+| `index=VPN_logs \| table EventTime UserName Source_ip action` | Display only selected fields in a clean table format.      |
+| `index=VPN_logs \| fields UserName Source_ip Source_Country`  | Show only the specified fields while hiding others.        |
+| `index=VPN_logs \| stats count`                               | Count the total number of matching events.                 |
+| `index=VPN_logs \| stats count by UserName`                   | Count events grouped by username.                          |
+| `index=VPN_logs \| stats count by Source_Country`             | Count events grouped by country.                           |
+| `index=VPN_logs \| top UserName`                              | Identify the most active users.                            |
+| `index=VPN_logs \| top Source_ip`                             | Identify the most active source IP addresses.              |
+| `index=VPN_logs \| rare UserName`                             | Find rarely occurring usernames.                           |
+| `index=VPN_logs \| sort - EventTime`                          | Sort events from newest to oldest.                         |
+| `index=VPN_logs \| head 10`                                   | Display the first 10 results.                              |
+| `index=VPN_logs \| tail 10`                                   | Display the last 10 results.                               |
+| `index=VPN_logs \| dedup UserName`                            | Remove duplicate usernames from the results.               |
+| `index=VPN_logs \| search Source_Country="France"`            | Filter results after the initial search.                   |
+| `index=VPN_logs Source_Country!="France"`                     | Exclude events matching a specific value.                  |
+| `index=VPN_logs \| chart count by Source_Country`             | Create a chart showing event counts by country.            |
+| `index=VPN_logs \| timechart count`                           | Visualize event volume over time.                          |
+
+### Note on the Index Name
+
+Throughout the examples below, I use the index name `VPN_logs`.
+
+This is not a default Splunk index. During the data ingestion process, I created a dedicated index named **VPN_logs** to store the uploaded VPN log dataset. Using a separate index helped keep the data organized and made it easier to target the dataset during searches and investigations.
+
+Depending on the environment, analysts may work with different index names such as `main`, `wineventlog`, `firewall`, or custom indexes created for specific data sources.
+
+### Why These Commands Matter
+
+While working through the VPN log dataset, I realized that most investigations follow the same general workflow:
+
+1. Identify the relevant dataset (`index`)
+2. Filter the events (`search`)
+3. Focus on important fields (`table`, `fields`)
+4. Count and summarize activity (`stats`)
+5. Identify trends and outliers (`top`, `rare`)
+6. Visualize results (`chart`, `timechart`)
+
+Commands such as `stats`, `table`, `top`, and `timechart` are among the most commonly used SPL commands because they allow analysts to quickly transform large volumes of raw log data into actionable information.
+
+Even in simple investigations, these commands can significantly reduce the time required to identify suspicious activity and understand what is happening within a dataset.
+
+## Key Takeaways
+
+Throughout this section, I explored the core concepts behind SIEM platforms and gained hands-on experience with Splunk's architecture, data ingestion process, and search capabilities.
+
+Some of the key concepts covered included:
+
+* Host-centric and network-centric log sources
+* SIEM functionality and event correlation
+* Log ingestion methods
+* Splunk architecture (Forwarders, Indexers, and Search Heads)
+* Data indexing and field extraction
+* Basic SPL queries used for searching and filtering data
+
+To reinforce these concepts, I uploaded a VPN log dataset into Splunk, created a dedicated index, and performed several searches using SPL.
+
+With the fundamentals in place, the next step is applying these concepts during real-world investigations and security monitoring scenarios.
+
+
+
+
 
 
 

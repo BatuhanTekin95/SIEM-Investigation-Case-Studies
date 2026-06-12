@@ -156,15 +156,16 @@ Every device within a network generates logs whenever an action occurs. Whether 
 
 These records become the foundation of security monitoring and incident investigations.
 
-
-
-
-
 ### Windows Logs
 
 Windows systems generate a large number of security, application, and system events that can be viewed through Event Viewer.
 
 > Event Viewer is the native Windows utility used to review system, application, and security logs. Many of the events collected by SIEM platforms such as Splunk originate from Windows Event Logs, making Event Viewer an important tool for understanding the source of security-relevant events and Event IDs.
+
+
+<img width="1919" height="850" alt="Ekran görüntüsü 2026-06-12 225113" src="https://github.com/user-attachments/assets/bb5672c1-b4f6-4621-a2aa-d1de0b0dc397" />
+
+> Example of Windows Event Viewer displaying Event ID 4624 (Successful Logon). Many of the Windows events later analyzed in Splunk originate from Windows Event Logs, making Event Viewer a valuable tool for understanding the source of security-relevant events and Event IDs.
 
 ### Important Windows Security Event IDs
 
@@ -194,19 +195,21 @@ Because Windows endpoints are often primary targets during attacks, these logs p
 
 ### Linux Logs
 
-Linux systems store logs in several different locations depending on the type of activity being recorded.
+Linux systems generate logs that provide visibility into authentication activity, scheduled tasks, service execution, kernel events, and application behavior.
 
-Some commonly encountered log files include:
+Common Linux log sources include:
 
-- `/var/log/auth.log`
-- `/var/log/secure`
-- `/var/log/cron`
-- `/var/log/httpd`
-- `/var/log/kern.log`
+- /var/log/auth.log
+- /var/log/secure
+- /var/log/cron
+- /var/log/httpd
+- /var/log/kern.log
 
-These logs can contain authentication activity, scheduled task execution, web server events, kernel messages, and other valuable forensic evidence.
+> Unlike Windows systems, which typically use Event Viewer, Linux logs are commonly stored as text files within the `/var/log/` directory and can be reviewed directly from the command line.
 
-During investigations, Linux logs often provide important context regarding user activity and system behavior.
+<img width="1901" height="603" alt="Ekran görüntüsü 2026-06-12 231816" src="https://github.com/user-attachments/assets/a5b6b42b-ac71-4c0b-b2c3-692fa76bd8e6" />
+
+> Example of Linux authentication logs viewed through /var/log/auth.log. Security analysts frequently examine authentication logs to investigate login activity, SSH access, sudo usage, privilege escalation attempts, account changes, and other security-relevant events.
 
 ### Web Server Logs
 
@@ -400,24 +403,26 @@ When a search is executed, the Search Head sends the request to the appropriate 
 
 
 
-### Data Visualization
 
-Beyond searching and investigation, Splunk also provides powerful visualization capabilities.
 
-Search results can be transformed into:
+## Data Visualization
 
-- Tables
-- Pie charts
-- Line graphs
-- Bar charts
-- Column charts
-- Geographic maps
-- Dashboards
+One of Splunk's most useful capabilities is transforming raw log data into visual representations that make patterns easier to identify.
 
-These visualizations help analysts quickly identify trends, monitor activity, and communicate findings more effectively.
+To better understand the VPN dataset, I grouped events by source country and visualized the results using a pie chart.
 
-As I continued exploring Splunk, it became clear that the platform is not only designed for searching logs but also for turning large volumes of data into meaningful and actionable insights.
 
+<img width="1908" height="598" alt="Ekran görüntüsü 2026-06-12 234033" src="https://github.com/user-attachments/assets/f91e7614-db8a-4c70-bf40-1f48e063dec1" />
+
+
+> Example of Splunk data visualization showing VPN activity grouped by source country. Visualizations help analysts quickly identify trends, geographic patterns, and unusual activity within large datasets.
+
+The following SPL query was used to generate the visualization:
+
+```spl
+index=vpn_logs
+| stats count by Source_Country
+```
 
 ---
 

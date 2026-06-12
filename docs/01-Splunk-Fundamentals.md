@@ -579,14 +579,14 @@ Depending on the environment, analysts may work with different index names such 
 
 While working with SPL, I quickly noticed that a few symbols appear repeatedly in almost every search. Understanding these operators makes it much easier to read and build more complex queries.
 
-| Symbol / Operator | Purpose                                                              | 
-| ----------------- | -------------------------------------------------------------------- 
-| `                 | Pipes the results of one command into another command. Similar to piping in Linux.  |  
-| `=`               | Searches for an exact field value match.                             |                                                                                    
-| `!=`              | Excludes events matching a specific value.                           |                                                                                    
-| `*`               | Wildcard character used to match multiple values or partial strings. |                                                                                    
-| `"` `"`           | Used when searching for exact phrases or values containing spaces.   |                                                                                    
-| `()`              | Groups conditions together within a search expression.               |                                                                                    
+| Symbol / Operator | Purpose |
+| ----------------- | ------- |
+| `\|` | Pipes the results of one command into another command. Similar to piping in Linux. |
+| `=` | Searches for an exact field value match. |
+| `!=` | Excludes events matching a specific value. |
+| `*` | Wildcard character used to match multiple values or partial strings. |
+| `"` `"` | Used when searching for exact phrases or values containing spaces. |
+| `()` | Groups conditions together within a search expression. |                                                                             
 
 Some examples:
 
@@ -656,7 +656,7 @@ The real value comes from understanding how logs are generated, how events relat
 
 Whether investigating phishing activity, suspicious authentication attempts, lateral movement, or privilege escalation, the ability to efficiently search and correlate logs remains one of the most important skills for a SOC analyst.
 
-
+This section was not intended to be an advanced Splunk investigation, but rather a foundation for understanding how logs are collected, indexed, searched, and visualized before moving into real SOC investigation scenarios.
 
 
 

@@ -243,27 +243,172 @@ The next alert focused on determining whether the downloaded payload had been ex
 
 # Web Shell Alert
 
+## Introduction
+
+Following the investigation of the persistence alert, a third alert was generated involving potential web shell activity on a public-facing web server.
+
+The alert indicated suspicious activity originating from the IP address `171.251.232.40` targeting the web application hosted at `http://web.trywinme.thm`.
+
+Web shells are commonly used by attackers after gaining access to a server, providing a remote interface for command execution, file management, and further post-exploitation activities. Because of their capabilities, web shell activity is often considered a high-severity security event.
+
+The objective of this investigation was to determine whether the observed activity represented a legitimate web request pattern or evidence of web shell deployment and attacker interaction with the server.
+
+<img width="920" height="357" alt="Ekran görüntüsü 2026-06-13 171832" src="https://github.com/user-attachments/assets/1e447c25-f094-4bb8-b0fd-6e7a831e98ff" />
+
+> Alert indicating potential web shell activity originating from source IP 171.251.232.40 against the web application hosted on web.trywinme.thm.
 
 
+## Threat Intelligence Review
+
+Before reviewing the web server logs, I performed a quick threat intelligence check on the source IP address identified in the alert.
+
+Threat intelligence enrichment can provide valuable context during an investigation by revealing whether an IP address has previously been associated with malicious activity.
+
+The source IP `171.251.232.40` was reviewed using publicly available threat intelligence sources before proceeding with deeper log analysis.
+
+<img width="648" height="546" alt="Ekran görüntüsü 2026-06-13 172310" src="https://github.com/user-attachments/assets/b6c8874e-fdd3-45f4-b8df-1d61a0c75e65" />
+
+> Threat intelligence enrichment showing that source IP 171.251.232.40 had been reported thousands of times for suspicious activity.
+
+The threat intelligence review revealed that the source IP address had been reported more than 12,000 times across public reputation databases.
+
+While threat intelligence data alone is not sufficient to confirm malicious activity, the volume of reports significantly increased the suspicion level associated with the source IP address and justified deeper investigation of the web server logs.
+
+With the source IP already associated with suspicious activity, the next step was to examine the web server logs and determine what actions were performed against the target application.
+
+## Initial Web Log Analysis
+
+After completing the threat intelligence review, I shifted my focus to the web server logs associated with the suspicious IP address identified in the alert.
+
+My objective was to understand how the source IP interacted with the target application, identify the resources being accessed, and determine whether the activity was consistent with legitimate user behavior or malicious reconnaissance and exploitation attempts.
+
+To begin the investigation, I reviewed all web requests associated with the source IP address `171.251.232.40`, including the requested URI paths, HTTP methods, response codes, and user-agent strings.
 
 
+<img width="1909" height="571" alt="Ekran görüntüsü 2026-06-13 173052" src="https://github.com/user-attachments/assets/aac062d8-3ab5-4704-951d-fa375d2c522e" />
+
+> Initial web log review showing HTTP requests originating from source IP 171.251.232.40 against the target web application.
+
+The search returned more than 300 web requests associated with the source IP address.
+
+Several observations immediately stood out during the initial review of the web traffic.
+
+First, all activity originated from the same source IP address identified in the alert.
+
+Second, the User-Agent field consistently contained `Mozilla/5.0 (Hydra)`, indicating the use of Hydra, a well-known password brute-force tool commonly used to automate large-scale authentication attempts against login portals.
+
+Finally, the requests were targeting the WordPress authentication page `wp-login.php`, with both GET and POST requests being observed throughout the activity.
+
+At this stage, the evidence strongly suggested an ongoing brute-force attack against the web application's login portal. However, the alert was related to potential web shell activity, making it necessary to continue the investigation and determine whether the attacker successfully gained access to the application.
+
+To better understand whether the attacker successfully progressed beyond the brute-force phase, I excluded the Hydra-generated requests and reviewed the remaining web traffic for signs of post-authentication activity and potential web shell interaction.
+
+## Filtering Hydra Activity
+
+After identifying clear evidence of Hydra-based brute-force activity, I excluded the automated authentication attempts from the search results to focus on potential post-authentication actions.
+
+My goal was to determine whether the attacker had successfully progressed beyond the login phase and interacted with other areas of the web application.
+
+<img width="1898" height="690" alt="Ekran görüntüsü 2026-06-13 173733" src="https://github.com/user-attachments/assets/8fc6852f-efe4-4771-abf1-6811c5da277e" />
+
+> Web requests remaining after excluding Hydra-generated traffic, revealing potential post-authentication activity within the application.
+
+The filtered results immediately revealed a significant change in activity.
+
+Unlike the previous search, the User-Agent string no longer contained Hydra and instead reflected a standard web browser, suggesting manual interaction with the application.
+
+More importantly, a POST request was observed against `admin-ajax.php`, with a referer pointing to:
+
+`theme-editor.php?file=b374k.php`
+
+The request returned an HTTP 200 response code, indicating that the server successfully processed the request.
+
+This finding was highly unusual. The WordPress theme editor is not typically associated with files named `b374k.php`, and the presence of this filename strongly suggested the existence of a web shell on the server.
+
+At this stage, the investigation shifted away from brute-force activity and toward potential web shell access and post-exploitation behavior.
+
+To validate this suspicion and determine whether the attacker had successfully interacted with the suspected web shell, I performed a focused search for activity associated with `b374k.php`.
+
+## Web Shell Activity Analysis
+
+After identifying references to `b374k.php`, I performed a focused search to determine whether the file had been actively used by the attacker.
+
+The search returned five events directly associated with `b374k.php`.
+
+The first event showed a successful GET request to:
+
+`/wp-admin/theme-editor.php`
+
+with a referer pointing to the same file. This suggested that the attacker had accessed the WordPress theme editor and interacted with the malicious PHP file.
+
+More importantly, four subsequent POST requests were observed against:
+
+`/wp-admin/admin-ajax.php`
+
+with referers containing:
+
+`theme-editor.php?file=b374k.php`
+
+All requests returned HTTP status code `200`, indicating successful communication between the attacker and the server.
+
+The repeated POST requests strongly suggested active interaction with the web shell rather than a simple file upload or accidental access. This behavior is consistent with command execution or post-exploitation activity performed through a web shell interface.
+
+<img width="1905" height="554" alt="Ekran görüntüsü 2026-06-13 174022" src="https://github.com/user-attachments/assets/31c3d7bf-c0ba-4db5-ad24-adaae5a586d5" />
+
+> Web shell related activity showing successful access to b374k.php and multiple POST requests consistent with attacker interaction.
+
+## Web Shell Findings
+
+The investigation confirmed that the attacker successfully progressed beyond the initial brute-force activity and gained access to a web shell identified as `b374k.php`.
+
+Key observations included:
+
+- Hydra-based brute-force activity targeting `wp-login.php`.
+- Successful authentication and subsequent access to the WordPress theme editor.
+- Discovery and access of the file `b374k.php`.
+- Multiple POST requests referencing `b374k.php`.
+- Repeated HTTP 200 responses indicating successful communication with the server.
+- Evidence of active post-exploitation activity through the web shell.
+
+Based on the available evidence, the investigation confirmed that the attacker successfully progressed from initial access attempts to active interaction with a web shell on the target server.
+
+Evidence of Hydra-based brute-force activity, successful access to the WordPress administration interface, and repeated interaction with the identified web shell strongly indicated active post-exploitation behavior.
+
+As a result, the alert was classified as a True Positive security incident requiring immediate containment, escalation, and further incident response activities.
+
+## MITRE ATT&CK Mapping
+
+Throughout the investigation, multiple attacker techniques were identified and mapped to the MITRE ATT&CK framework.
+
+| Tactic                       | Technique                  | ID        |
+| ---------------------------- | -------------------------- | --------- |
+| Credential Access            | Brute Force                | T1110     |
+| Persistence                  | Scheduled Task/Job         | T1053.005 |
+| Execution                    | PowerShell                 | T1059.001 |
+| Defense Evasion              | Certutil                   | T1218.010 |
+| Command and Control          | Ingress Tool Transfer      | T1105     |
+| Persistence                  | Web Shell                  | T1505.003 |
+| Command and Control          | Application Layer Protocol | T1071     |
+| Initial Access / Persistence | Valid Accounts             | T1078     |
 
 
+The identified techniques demonstrate a complete attack chain spanning credential access, persistence, malware delivery, execution, and web shell interaction. Mapping these activities to the MITRE ATT&CK framework provides additional context regarding the attacker's objectives and methodology.
 
+# Conclusion
 
+This investigation followed a multi-stage attack scenario involving brute-force activity, persistence mechanisms, malware execution, and web shell interaction.
 
+The initial alert revealed unauthorized authentication attempts that ultimately resulted in account compromise and privilege escalation. Further investigation identified a malicious scheduled task designed to maintain persistence through automated payload delivery and execution.
 
+The final stage of the investigation uncovered successful access to a web shell hosted on the target web server. Analysis of the associated web traffic confirmed active attacker interaction and post-exploitation activity following the initial compromise.
 
+Throughout the investigation, each alert was validated as a True Positive security incident based on the available evidence. By correlating authentication events, scheduled task activity, process execution, and web server logs, it was possible to reconstruct the attack chain and identify multiple attacker techniques mapped to the MITRE ATT&CK framework.
 
+This case study highlights the importance of log analysis, threat hunting, and structured investigation methodologies when responding to security alerts within a SOC environment.
 
+This investigation demonstrates how seemingly isolated alerts can be connected to reveal a broader attack campaign. By correlating authentication logs, endpoint activity, process execution, and web server events, it was possible to trace the attack from initial access through persistence and post-exploitation.
 
-
-
-
-
-
-
-
+The case also reinforces the importance of structured analysis, threat intelligence enrichment, and continuous monitoring when investigating security incidents within a SOC environment.
 
 
 

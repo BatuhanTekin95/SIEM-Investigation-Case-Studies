@@ -380,36 +380,33 @@ As a result, the alert was classified as a True Positive security incident requi
 
 Throughout the investigation, multiple attacker techniques were identified and mapped to the MITRE ATT&CK framework.
 
-| Tactic                       | Technique                  | ID        |
-| ---------------------------- | -------------------------- | --------- |
-| Credential Access            | Brute Force                | T1110     |
-| Persistence                  | Scheduled Task/Job         | T1053.005 |
-| Execution                    | PowerShell                 | T1059.001 |
-| Defense Evasion              | Certutil                   | T1218.010 |
-| Command and Control          | Ingress Tool Transfer      | T1105     |
-| Persistence                  | Web Shell                  | T1505.003 |
-| Command and Control          | Application Layer Protocol | T1071     |
-| Initial Access / Persistence | Valid Accounts             | T1078     |
+| Tactic                       | Technique                                                | ID        |
+| ---------------------------- | -------------------------------------------------------- | --------- |
+| Credential Access            | Brute Force                                              | T1110     |
+| Initial Access / Persistence | Valid Accounts                                           | T1078     |
+| Privilege Escalation         | Abuse Elevation Control Mechanism: Sudo and Sudo Caching | T1548.003 |
+| Persistence                  | Create Account: Local Account                            | T1136.001 |
+| Persistence                  | Scheduled Task/Job                                       | T1053.005 |
+| Execution                    | PowerShell                                               | T1059.001 |
+| Defense Evasion              | Certutil                                                 | T1218.010 |
+| Command and Control          | Ingress Tool Transfer                                    | T1105     |
+| Persistence                  | Web Shell                                                | T1505.003 |
+| Command and Control          | Application Layer Protocol                               | T1071     |
 
 
 The identified techniques demonstrate a complete attack chain spanning credential access, persistence, malware delivery, execution, and web shell interaction. Mapping these activities to the MITRE ATT&CK framework provides additional context regarding the attacker's objectives and methodology.
 
 # Conclusion
 
-This investigation followed a multi-stage attack scenario involving brute-force activity, persistence mechanisms, malware execution, and web shell interaction.
+This investigation reconstructed a multi-stage attack chain involving brute-force activity, account compromise, privilege escalation, persistence mechanisms, malware delivery, and web shell interaction.
 
-The initial alert revealed unauthorized authentication attempts that ultimately resulted in account compromise and privilege escalation. Further investigation identified a malicious scheduled task designed to maintain persistence through automated payload delivery and execution.
+Analysis of authentication logs confirmed that the attacker successfully compromised the `john.smith` account through brute-force activity, escalated privileges to `root`, and established persistence by creating a new local account. Further investigation uncovered a malicious scheduled task designed to download and execute an external payload, providing an additional persistence mechanism on a compromised workstation.
 
-The final stage of the investigation uncovered successful access to a web shell hosted on the target web server. Analysis of the associated web traffic confirmed active attacker interaction and post-exploitation activity following the initial compromise.
+The final stage of the investigation revealed active interaction with a `b374k.php` web shell hosted on a public-facing web server. Correlation of web server logs confirmed successful communication between the attacker and the web shell, indicating post-exploitation activity following the initial compromise.
 
-Throughout the investigation, each alert was validated as a True Positive security incident based on the available evidence. By correlating authentication events, scheduled task activity, process execution, and web server logs, it was possible to reconstruct the attack chain and identify multiple attacker techniques mapped to the MITRE ATT&CK framework.
+By correlating authentication events, endpoint activity, process execution, and web server logs, it was possible to reconstruct the attack timeline and map the observed techniques to the MITRE ATT&CK framework. Each alert was validated as a **True Positive** security incident requiring containment, remediation, and further incident response actions.
 
-This case study highlights the importance of log analysis, threat hunting, and structured investigation methodologies when responding to security alerts within a SOC environment.
-
-This investigation demonstrates how seemingly isolated alerts can be connected to reveal a broader attack campaign. By correlating authentication logs, endpoint activity, process execution, and web server events, it was possible to trace the attack from initial access through persistence and post-exploitation.
-
-The case also reinforces the importance of structured analysis, threat intelligence enrichment, and continuous monitoring when investigating security incidents within a SOC environment.
-
+This case study demonstrates the importance of log analysis, threat hunting, and structured investigation methodologies in identifying, validating, and understanding complex security incidents within a SOC environment.
 
 
 

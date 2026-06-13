@@ -342,6 +342,53 @@ These examples represent common areas analysts investigate when searching for si
 
 ---
 
+## MITRE ATT&CK Framework
+
+While studying SIEM investigations, I quickly realized that identifying suspicious activity is only one part of the process. Analysts also need a common framework to categorize attacker behavior and communicate findings consistently.
+
+One of the most widely used frameworks in modern Security Operations Centers is MITRE ATT&CK.
+
+MITRE ATT&CK is a knowledge base of adversary tactics and techniques built from real-world observations. It helps analysts understand how attackers operate throughout different stages of an intrusion and provides a structured way to map observed behavior during investigations.
+
+### Common ATT&CK Tactics
+
+| Tactic               | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| Initial Access       | How the attacker gained access to the environment |
+| Execution            | How malicious code was executed                   |
+| Persistence          | How access was maintained                         |
+| Privilege Escalation | How permissions were increased                    |
+| Defense Evasion      | How security controls were bypassed               |
+| Credential Access    | How credentials were obtained                     |
+| Discovery            | How the environment was explored                  |
+| Lateral Movement     | How the attacker moved between systems            |
+| Command and Control  | How compromised hosts communicated externally     |
+| Impact               | Actions performed to disrupt operations           |
+
+Understanding these tactics helps analysts organize investigation findings and better understand the attack lifecycle.
+
+### Common ATT&CK Techniques
+
+Many of the techniques listed below appeared during my previous **[Boogeyman3: Phishing-to-Ransomware Investigation (Elastic Security)](https://github.com/BatuhanTekin95/SOC-Phishing-Case-Studies/blob/main/docs/03-Boogeyman3-Phishing-to-Ransomware-Investigation-Elastic-Security.md)** and are commonly encountered during real-world incident response and threat hunting activities.
+
+| Technique                             | ATT&CK ID | Example                                       |
+| ------------------------------------- | --------- | --------------------------------------------- |
+| Spearphishing Attachment              | T1566.001 | Malicious email attachment                    |
+| PowerShell                            | T1059.001 | PowerShell command execution                  |
+| Scheduled Task                        | T1053.005 | Persistence through scheduled tasks           |
+| OS Credential Dumping                 | T1003     | Credential dumping using tools such as Mimikatz |
+| Pass the Hash                         | T1550.002 | Authentication using NTLM hashes              |
+| Remote Services (PowerShell Remoting) | T1021.006 | Lateral movement between hosts                |
+| Network Share Discovery               | T1135     | Enumeration of shared network resources       |
+| DCSync                                | T1003.006 | Active Directory credential replication       |
+| Application Layer Protocol            | T1071.001 | Command-and-control communication over HTTP   |
+| Data Encrypted for Impact             | T1486     | Ransomware activity                           |
+
+By mapping observed behavior to MITRE ATT&CK techniques, analysts can better understand attacker objectives, improve detection coverage, communicate findings more effectively, and build more structured investigations.
+
+---
+
+
 ## Splunk Architecture
 
 <img width="1721" height="914" alt="46fc498d-4ad0-48a7-9059-dc883f201ba0" src="https://github.com/user-attachments/assets/fb5af649-5022-42e1-bab5-14ab34e8be59" />

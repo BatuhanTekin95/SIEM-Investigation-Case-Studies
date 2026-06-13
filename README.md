@@ -2,11 +2,29 @@
 
 ## Overview
 
-After completing my Phishing Case Studies project, I wanted to take the next step and focus on one of the most important skills for a SOC Analyst: SIEM investigation and log analysis.
+After completing my **SOC Phishing Case Studies** project, I wanted to focus on another core responsibility of a SOC Analyst: **SIEM investigation and log analysis**.
 
-This project documents my journey of learning and applying SIEM technologies through hands-on investigations. Rather than focusing solely on theory, the goal is to analyze real-world security scenarios, analyze logs, identify malicious activity, and develop a structured approach to incident investigation.
+One of the final investigations in my previous project, **Boogeyman3: Phishing-to-Ransomware Investigation (Elastic Security)**, involved analyzing a multi-stage attack that progressed from an initial phishing email to credential theft, lateral movement, Active Directory compromise, and ransomware deployment. Throughout that investigation, Elastic Security played a key role in helping me trace attacker activity, correlate events, and reconstruct the attack timeline.
 
-Throughout this repository, I explore fundamental SIEM concepts, log analysis techniques, detection methodologies, and practical investigations performed using Splunk. Each lab is documented step-by-step to demonstrate the thought process behind identifying indicators of compromise (IOCs), validating alerts, and understanding attacker behavior.
+Building on that experience, I created this repository to further develop and document my SIEM investigation skills through hands-on analysis and practical security scenarios.
 
-The purpose of this project is not only to strengthen my own blue team skills but also to create a resource that may help others who are beginning their journey into Security Operations and threat detection.
+This project focuses on how security events are collected, analyzed, and investigated within a SIEM platform. Using Splunk, I explore log analysis techniques, detection methodologies, alert validation, and incident investigation workflows commonly used in Security Operations Centers (SOCs).
+
+Each lab is documented step-by-step to demonstrate the investigation process, highlight important findings, and provide insight into the reasoning behind each analytical decision.
+
+The goal of this repository is not only to strengthen my understanding of SIEM technologies but also to build a collection of practical investigations that showcase my approach to security monitoring, threat detection, and incident analysis.
+
+I enjoyed working through these investigations and documenting the findings along the way. Hopefully, anyone exploring this repository will find the content both informative and engaging while following the investigation process.
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -4,7 +4,7 @@
 
 After completing my **SOC Phishing Case Studies** project, I wanted to focus on another core responsibility of a SOC Analyst: **SIEM investigation and log analysis**.
 
-One of the final investigations in my previous project, **Boogeyman3: Phishing-to-Ransomware Investigation (Elastic Security)**, involved analyzing a multi-stage attack that progressed from an initial phishing email to credential theft, lateral movement, Active Directory compromise, and ransomware deployment. Throughout that investigation, Elastic Security played a key role in helping me trace attacker activity, correlate events, and reconstruct the attack timeline.
+One of the final investigations in my previous project, **[Boogeyman3: Phishing-to-Ransomware Investigation (Elastic Security)](https://github.com/BatuhanTekin95/SOC-Phishing-Case-Studies/blob/main/docs/03-Boogeyman3-Phishing-to-Ransomware-Investigation-Elastic-Security.md)**, involved analyzing a multi-stage attack that progressed from an initial phishing email to credential theft, lateral movement, Active Directory compromise, and ransomware deployment. Throughout that investigation, Elastic Security played a key role in helping me trace attacker activity, correlate events, and reconstruct the attack timeline.
 
 Building on that experience, I created this repository to further develop and document my SIEM investigation skills through hands-on analysis and practical security scenarios.
 

@@ -120,7 +120,7 @@ This strongly suggested that the attacker had obtained privileged credentials an
 
 The investigation revealed a critical distinction between the user executing the commands and the credentials being supplied to authenticate against remote systems.
 
-The `User` field showed that the commands were executed under the context of `michelle.smith`, while the `CommandLine` field revealed the use of the privileged account `TRHYATEMSTUDIOS\luke.sullivan` through the `/user:` parameter.
+The `User` field showed that the commands were executed under the context of `michelle.smith`, while the `CommandLine` field revealed the use of the privileged account `TRYHATMESTUDIOS\luke.sullivan` through the `/user:` parameter.
 
 The attacker used the built-in Windows `net use` command to connect to the ADMIN$ administrative shares of multiple systems, including THM-SHR-SRV, THM-SQL-SRV, and THM-DEV-WS.
 
@@ -129,7 +129,7 @@ This evidence confirmed that the attacker had compromised the workstation THM-MK
 Having confirmed that stolen administrative credentials were being used from the compromised workstation to access remote ADMIN$ shares, the next step was to determine whether the attacker progressed beyond file share access and began executing commands on remote systems through PsExec.
 
 
-# PsExec-Based Lateral Movement Investigation
+## PsExec-Based Lateral Movement Investigation
 
 While SMB administrative share access confirmed that the attacker was authenticating to remote systems, file share access alone does not necessarily indicate remote command execution.
 
@@ -249,15 +249,7 @@ The investigation successfully correlated source-side and destination-side artif
 
 While the source and destination systems had now been identified, additional artifacts remained available for validation. To further confirm PsExec activity and identify evidence of remote execution channels, I investigated named pipe creation events generated during the attack.
 
-# RDP-Based Lateral Movement Investigation
-
-After confirming SMB and PsExec-based lateral movement activity, the next step was to determine whether the attacker established interactive remote sessions within the environment.
-
-Remote Desktop Protocol (RDP) is frequently abused by attackers after obtaining valid credentials because it provides full graphical access to target systems. Unlike SMB-based activity, RDP allows attackers to interact directly with the remote host, execute commands, browse files, and perform administrative actions through an interactive desktop session.
-
-To identify potential RDP-based lateral movement, I reviewed Windows logon events and focused on Event ID 4624 records associated with remote interactive logons.
-
-# RDP-Based Lateral Movement Investigation
+## RDP-Based Lateral Movement Investigation
 
 After identifying SMB-based lateral movement and PsExec execution across the environment, the next step was to determine whether the attacker established interactive remote sessions to move deeper into the network.
 
@@ -330,7 +322,7 @@ The investigation successfully reconstructed the attacker's RDP movement path th
 
 The evidence demonstrated a clear example of RDP chaining, where the attacker pivoted through THM-SQL-SRV before establishing an interactive session on THM-DC. Combined with the previously identified SMB and PsExec activity, the investigation revealed a coordinated lateral movement campaign that leveraged valid administrative credentials to expand access across the environment.
 
-# MITRE ATT&CK Mapping
+## MITRE ATT&CK Mapping
 
 | Tactic                             | Technique                                                    | ID        | Evidence                                                                                                                             |
 | ---------------------------------- | ------------------------------------------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -338,17 +330,17 @@ The evidence demonstrated a clear example of RDP chaining, where the attacker pi
 | Discovery                          | System Owner/User Discovery                                  | T1033     | The command `whoami` was executed through PsExec to identify the current user context on THM-SQL-SRV.                                |
 | Discovery                          | System Network Configuration Discovery                       | T1016     | The attacker executed `ipconfig` to gather network configuration details from the target system.                                     |
 | Discovery                          | System Information Discovery                                 | T1082     | The command `hostname` was used to identify the target host during post-exploitation activities.                                     |
-| Credential Access                  | Valid Accounts                                               | T1078     | The attacker authenticated using the legitimate accounts `luke.sullivan` and `adm-luke.sullivan` during lateral movement activities. |
+| Defense Evasion / Lateral Movement | Valid Accounts                                               | T1078     | The attacker used legitimate administrative credentials during SMB, PsExec, and RDP activity.                                        |
 | Lateral Movement                   | SMB/Windows Admin Shares                                     | T1021.002 | Multiple ADMIN$ share access events were identified through Event ID 5140 logs, indicating SMB-based lateral movement between hosts. |
 | Lateral Movement                   | Remote Services: SMB/Windows Admin Shares                    | T1021.002 | The attacker used `net use` commands to connect to remote ADMIN$ shares and transfer access between systems.                         |
-| Lateral Movement                   | Remote Services: Distributed Component Object Model / PsExec | T1569.002 | PsExec was used to execute commands remotely on THM-SQL-SRV through the PSEXESVC service.                                            |
+| Execution / Lateral Movement       | System Services: Service Execution                           | T1569.002 | PsExec created the temporary PSEXESVC service to execute commands remotely on THM-SQL-SRV.                                           |
 | Lateral Movement                   | Remote Services: Remote Desktop Protocol                     | T1021.001 | Event ID 4624 with Logon Type 10 confirmed RDP sessions from THM-MKT-WS to THM-SQL-SRV and from THM-SQL-SRV to THM-DC.               |
 | Execution                          | Windows Command Shell                                        | T1059.003 | Remote commands were executed through `cmd.exe` using PsExec.                                                                        |
 | Persistence / Privilege Escalation | Create or Modify System Process: Windows Service             | T1543.003 | PsExec created and executed the temporary `PSEXESVC` service on the target system.                                                   |
 
 The investigation revealed a structured lateral movement campaign in which the attacker leveraged valid administrative credentials to move across multiple systems using SMB administrative shares, PsExec remote execution, and RDP sessions. By correlating Security and Sysmon logs, it was possible to reconstruct the complete attack path from the compromised workstation to the Domain Controller and map each stage to the corresponding MITRE ATT&CK techniques.
 
-# Conclusion
+## Conclusion
 
 This investigation demonstrated how an attacker leveraged valid credentials and multiple lateral movement techniques to progress through the environment and ultimately gain access to the Domain Controller.
 

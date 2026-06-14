@@ -84,8 +84,6 @@ To investigate potential SMB-based lateral movement, I reviewed Windows Security
 
 > Windows Security Event ID 5140 logs revealed repeated access to the ADMIN$ administrative share across multiple systems using the account `luke.sullivan`. The activity originated from source IP `10.5.50.12` and targeted several hosts within a short period of time. Access to administrative shares on multiple systems is commonly associated with SMB-based lateral movement and warranted further investigation.
 
-The investigation identified several ADMIN$ share access events occurring within minutes of each other. The same account accessed multiple hosts, including THM-DEV-WS, THM-SHR-SRV, and THM-SQL-SRV, from a single source IP address.
-
 At this stage, the account `luke.sullivan` appeared to be responsible for the activity. However, administrative credentials can be stolen or abused by another user. To determine who was actually initiating the connections, I needed to trace the activity back to the source system and identify the user operating behind the scenes.
 
 While administrative share access can be legitimate, the pattern observed here differed from normal administrative behavior. The rapid access to multiple systems suggested that the credentials were being used to facilitate lateral movement across the environment.

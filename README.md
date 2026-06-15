@@ -17,6 +17,23 @@ The goal of this repository is not only to strengthen my understanding of SIEM t
 I enjoyed working through these investigations and documenting the findings along the way. Hopefully, anyone exploring this repository will find the content both informative and engaging while following the investigation process.
 
 
+## Repository Structure
+
+### 01 - [Splunk Fundamentals](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/01-Splunk-Fundamentals.md)
+
+An introduction to SIEM concepts, log analysis fundamentals, Windows and Linux log sources, SPL queries, data visualization, and the MITRE ATT&CK framework.
+
+### 02 - [Multi-Stage Attack Investigation (Splunk)](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/02%20-%20Multi-Stage%20Attack%20Investigation%20%28Splunk%29.md)
+
+Investigation of a multi-stage intrusion involving initial access, privilege escalation, persistence, and web shell activity through Splunk log analysis. The investigation focuses on correlating security events, validating alerts, and reconstructing the attack timeline.
+
+### 03 - [Active Directory Lateral Movement Investigation (Splunk)](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/03%20-%20Active%20Directory%20Lateral%20Movement%20Investigation%20%28Splunk%29.md)
+
+Investigation of attacker activity within an Active Directory environment, including PowerShell-based discovery, SMB access, PsExec execution, named pipe artifacts, RDP activity, and Domain Controller compromise.
+
+### 04 - [Threat Hunting Investigation: Software Supply Chain Compromise (Elastic)](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/04-Threat%20Hunting%20Investigation%3A%20Software%20Supply%20Chain%20Compromise%20%28Elastic%29.md)
+
+A threat hunting investigation that follows a malicious software supply chain compromise from initial access to ransomware deployment. The investigation covers PowerShell-based payload delivery, service-based persistence, credential dumping, Pass-the-Hash abuse, DCSync activity, domain compromise, and ransomware impact analysis using Elastic Security.
 
 
 

@@ -489,7 +489,7 @@ With domain administrator privileges obtained, the attacker deployed the ransomw
 
 This investigation highlighted how a seemingly legitimate software download can rapidly escalate into a full domain compromise when attackers successfully combine credential theft, privilege escalation, lateral movement, and ransomware deployment. The findings demonstrate the importance of monitoring PowerShell activity, service creation events, credential access techniques, and authentication anomalies to detect and contain similar attacks before they reach the impact stage.
 
-
+This investigation demonstrated how a single malicious software download can evolve into a complete domain compromise when credential theft, privilege escalation, and Active Directory abuse remain undetected.
 
 
 

@@ -1,16 +1,18 @@
-# Introduction
+# Malvertising and Fake Software Delivery Investigation (Elastic)
 
-Software supply chain attacks have become one of the most effective techniques used by threat actors to compromise organizations. Instead of directly targeting victims, attackers disguise malicious software as legitimate applications and rely on user trust to gain initial access.
+## Introduction
 
-In this investigation, I analyzed a potential software supply chain compromise involving a victim who searched online for a file extraction utility and unknowingly downloaded a malicious installer masquerading as a legitimate 7-Zip application.
+This investigation started with a user searching for 7-Zip and clicking a sponsored result that led to the lookalike domain `7zipp.org`. The evidence supports malvertising and fake software delivery; it does not show that the legitimate 7-Zip source code, update channel, or distribution process was compromised.
 
-Using Elastic Security and endpoint telemetry collected from the affected workstation, the objective was to reconstruct the attack timeline, identify the malicious infrastructure, track the attacker's activities, and assess the overall impact of the compromise.
+| Scope | Details |
+| --- | --- |
+| Platform | Elastic Security |
+| Initial access | Sponsored result and fake 7-Zip installer |
+| Main telemetry | Sysmon, PowerShell, process, file, DNS, and authentication events |
+| Main activity | MSI execution, malicious service, credential dumping, Pass-the-Hash, DCSync, ransomware |
+| Assessment | True Positive in a controlled lab |
 
-Throughout this investigation, I followed a threat hunting approach by examining process activity, file creation events, network connections, authentication logs, and post-compromise behavior to understand how the attacker progressed from initial access to full domain compromise and ransomware deployment.
-
-<img width="1305" height="850" alt="Ekran görüntüsü 2026-06-15 194717" src="https://github.com/user-attachments/assets/c86cea46-61e2-4d48-b41f-494f3edc01a4" />
-
->  The victim searched for 7-Zip and clicked a sponsored search result that redirected to the malicious domain `7zipp.org`, a lookalike website impersonating the legitimate 7-Zip download page.
+I followed the process and file relationships from the downloaded MSI to the final ransomware activity. Credentials and keys shown in the lab are partially masked because this repository is public.
 
 ## Initial Investigation
 
@@ -54,7 +56,7 @@ By searching for references to `7zipp.org`, I identified multiple DNS resolution
 
 > DNS telemetry revealed that the malicious domain `7zipp.org` resolved to the IP address `206.189.34.218`, providing additional visibility into the infrastructure used to host the malicious installer.
 
-The DNS records consistently resolved the domain to the same IP address, indicating that the installer was hosted on infrastructure controlled by the attacker.
+The DNS records consistently resolved the domain to the same IP address, linking the suspicious domain to the infrastructure used during the lab. DNS resolution alone does not prove ownership or control.
 
 ## Tracking Malware Execution
 
@@ -160,11 +162,11 @@ This finding confirmed that the malicious script established persistence by crea
 
 The combination of automatic startup, LocalSystem privileges, and attacker-controlled binaries significantly increased the attacker's ability to maintain long-term access and execute additional malicious actions on the host.
 
-With the persistence mechanism identified, the next step was to investigate the service execution and determine how the attacker established command-and-control (C2) communications within the environment.
+With the service identified, the next step was to determine its execution context. The available events showed the account and service activity, but they did not include enough network evidence to confirm a command-and-control channel.
 
-## Investigating Service Execution and C2 Activity
+## Investigating Service Execution Context
 
-After identifying the malicious service created by the PowerShell payload, the next objective was to determine which account executed the service after it was installed.
+After identifying the service created by the PowerShell payload, I checked which account executed it after installation.
 
 To continue the investigation, I searched for activity associated with the service identified during the previous phase:
 
@@ -262,11 +264,11 @@ The `sekurlsa::pth` command is used to perform a Pass-the-Hash attack, allowing 
 
 The command line exposed the compromised account and associated NTLM hash:
 
-`james.cromwell:B852A0B8BD4E00564128E0A5EA2BC4CF`
+`james.cromwell:B852A0B8************************`
 
 The complete command showed that the attacker launched a new PowerShell process using the recovered NTLM hash:
 
-`.\mimikatz.exe "sekurlsa::pth /user:james.cromwell /domain:swiftspendfinancial.thm /ntlm:B852A0B8BD4E00564128E0A5EA2BC4CF /run:powershell.exe"`
+`.\mimikatz.exe "sekurlsa::pth /user:james.cromwell /domain:swiftspendfinancial.thm /ntlm:B852A0B8************************ /run:powershell.exe"`
 
 This finding confirmed that the attacker successfully leveraged harvested NTLM credentials to impersonate the account james.cromwell through a Pass-the-Hash attack.
 
@@ -290,13 +292,13 @@ The results revealed several account enumeration and management commands, includ
 
 Among the observed commands, one entry immediately stood out:
 
-`"C:\Windows\system32\net.exe" users /domain anna.jones pwn3dpw!!!`
+`"C:\Windows\system32\net.exe" users /domain anna.jones pwn3d***`
 
 The command showed that the attacker reset the password of the domain account `anna.jones`.
 
 The new password assigned to the account was:
 
-`pwn3dpw!!!`
+`pwn3d***`
 
 This finding confirmed that the attacker progressed beyond credential theft and actively manipulated domain user accounts after compromising `james.cromwell`.
 
@@ -347,12 +349,12 @@ I identified PowerShell activity involving the creation of a PSCredential object
 Reviewing the command-line details exposed the following PowerShell statements:
 
 `$username='SSF\itadmin';
-$password='No06@39Sk0!';
+$password='No06@***';
 $securePassword = ConvertTo-SecureString $password -AsPlainText -Force;
 $new_creds = New-Object System.Management.Automation.PSCredential($username,$securePassword)
 `
 
-The command created a PSCredential object using a newly discovered account and password. Analysis of the PowerShell statements revealed the credentials `SSF\itadmin` and `No06@39Sk0!`, exposing a newly discovered privileged account leveraged by the attacker.
+The command created a PSCredential object using a newly discovered account and password. Analysis of the PowerShell statements revealed the credentials `SSF\itadmin` and `No06@***`, exposing a newly discovered privileged account leveraged by the attacker.
 Further analysis showed that these credentials were subsequently used to perform domain administration activities through PowerShell. This indicated that the attacker had successfully expanded access beyond the previously compromised accounts and obtained a more privileged level of control within the environment.
 
 This finding confirmed that the attacker obtained and leveraged a new privileged account, providing additional opportunities for privilege escalation, account manipulation, and lateral movement within the environment.
@@ -416,7 +418,7 @@ I identified PowerShell invocation logs containing credential information extrac
 
 Reviewing the DCSync output revealed the AES256 Kerberos key associated with the domain administrator account:
 
-`f28a16b8d3f5163cb7a7f7ed2c8f2cf0419f0b0c2e28c15f831d050f5edaa534`
+`f28a16b8d3f5****************************************************`
 
 The presence of Kerberos AES256 keys confirmed that the attacker successfully extracted credential data directly from Active Directory through the DCSync technique.
 
@@ -454,12 +456,55 @@ I identified Sysmon File Create events generated by the ransomware.
 
 > File creation events associated with `bomb.exe` revealed the creation of encrypted files with a new ransomware-specific extension.
 
-Reviewing the file creation events revealed that the ransomware encrypted files using the `.777zzz` extension. A total of `46` Sysmon Event ID 11 file creation events were recorded across the affected workstations.
-file creation events associated with the encrypted `.777zzz` files.
+Reviewing the results showed 46 Sysmon Event ID 11 file-creation events for files using the `.777zzz` extension across the affected workstations. This confirms ransomware-related file activity in the lab, but the event count should not automatically be read as the number of unique files without checking the file paths and removing duplicates.
 
-This finding confirmed that the attacker successfully deployed ransomware after obtaining domain administrator privileges and encrypted a total of 46 files across the affected workstations.
+The activity began with fake software delivery and progressed through payload execution, persistence, credential access, Pass-the-Hash, domain compromise, and ransomware impact.
 
-The investigation revealed a complete attack lifecycle, beginning with the initial phishing compromise and progressing through payload execution, persistence, credential dumping, Pass-the-Hash abuse, domain administrator compromise, and ultimately ransomware deployment. The successful encryption of files across multiple systems demonstrated the full operational impact of the intrusion.
+## KQL Search Notes
+
+The searches below capture the main pivots used in the lab. Data views, field mappings, and event categories should be narrowed for a production environment.
+
+### Download and MSI execution
+
+```kql
+process.name : "msiexec.exe" and process.command_line : "*7z2301-x64.msi*"
+```
+
+### PowerShell payload and credential-dumping activity
+
+```kql
+process.name : "powershell.exe" and
+process.command_line : ("*7z.ps1*" or "*Invoke-NanoDump*" or "*Invoke-PowerExtract*")
+```
+
+### Pass-the-Hash and DCSync indicators
+
+```kql
+process.command_line : ("*sekurlsa::pth*" or "*Invoke-SharpKatz*" or "*DCSync*")
+```
+
+### Ransomware file activity
+
+```kql
+process.name : "bomb.exe" and event.code : "11"
+```
+
+## Evidence Boundaries
+
+- A lookalike download site and sponsored result support malvertising and fake software delivery, not a confirmed software supply-chain compromise.
+- DNS resolution links the domain to observed infrastructure but does not prove who controlled it.
+- The service events show SYSTEM execution; they do not by themselves prove C2 communication.
+- The 46 Sysmon events represent observed file-creation records. Unique impacted files and hosts should be calculated separately.
+- Lab passwords, hashes, and Kerberos keys are masked in this public write-up.
+
+## Containment and Recovery
+
+- Isolate affected workstations and block the suspicious domain, IP, MSI, scripts, and ransomware artifacts.
+- Stop and remove the malicious service only after evidence collection.
+- Reset affected accounts, revoke active sessions and Kerberos tickets, and rotate privileged credentials.
+- Review Domain Controller logs for DCSync activity and unauthorized account changes.
+- Hunt across the environment for the same PowerShell functions, service name, process tree, and file extension.
+- Restore affected files from validated backups and confirm that persistence has been removed before reconnecting hosts.
 
 ## MITRE ATT&CK Mapping
 
@@ -467,6 +512,7 @@ The investigation revealed a complete attack lifecycle, beginning with the initi
 | ---------------------------------- | ------------------------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Initial Access                     | Drive-by Compromise                              | T1189     | The victim downloaded a malicious MSI installer from the spoofed domain `7zipp.org` after clicking a sponsored search result. |
 | Execution                          | User Execution: Malicious File                   | T1204.002 | The victim executed the malicious file `7z2301-x64.msi` through `msiexec.exe`.                                                |
+| Defense Evasion                    | System Binary Proxy Execution: Msiexec           | T1218.007 | `msiexec.exe` executed the downloaded MSI package.                                                                           |
 | Execution                          | PowerShell                                       | T1059.001 | The MSI installer launched PowerShell and executed the remote script `7z.ps1`.                                                |
 | Persistence                        | Create or Modify System Process: Windows Service | T1543.003 | The attacker created and started the `7zService` Windows service using `sc.exe`.                                              |
 | Credential Access                  | OS Credential Dumping: LSASS Memory              | T1003.001 | `Invoke-NanoDump` and `Invoke-PowerExtract` were used to dump and parse LSASS memory.                                         |
@@ -479,22 +525,8 @@ The investigation revealed a complete attack lifecycle, beginning with the initi
 
 ## Conclusion
 
-This investigation successfully reconstructed the complete attack chain, beginning with a software supply chain compromise and ending with ransomware deployment across the environment.
+The evidence supports a fake software delivery chain that started when the user downloaded and executed a malicious MSI from a lookalike 7-Zip site.
 
-The attacker leveraged a malicious 7-Zip installer hosted on the spoofed domain `7zipp.org` to gain initial access to the victim workstation. Following execution of the MSI package, a PowerShell-based payload was downloaded and executed, ultimately leading to the installation of a persistent Windows service running with SYSTEM privileges.
+From there, the investigation followed PowerShell execution, a service running as SYSTEM, LSASS credential dumping, Pass-the-Hash activity, account manipulation, DCSync, and finally `bomb.exe` creating files with the `.777zzz` extension. The sequence shows how one untrusted software download can develop into a domain-level incident when credential access and privileged activity are not contained early.
 
-After establishing persistence, the attacker harvested credentials from LSASS memory using `Invoke-NanoDump` and `Invoke-PowerExtract`, then leveraged Mimikatz to perform a Pass-the-Hash attack against the account `james.cromwell`. The compromise continued through account manipulation, discovery of additional privileged credentials, and execution of a DCSync attack against the domain administrator account.
-
-With domain administrator privileges obtained, the attacker deployed the ransomware binary `bomb.exe`, resulting in the encryption of 46 files across affected workstations.
-
-This investigation highlighted how a seemingly legitimate software download can rapidly escalate into a full domain compromise when attackers successfully combine credential theft, privilege escalation, lateral movement, and ransomware deployment. The findings demonstrate the importance of monitoring PowerShell activity, service creation events, credential access techniques, and authentication anomalies to detect and contain similar attacks before they reach the impact stage.
-
-This investigation demonstrated how a single malicious software download can evolve into a complete domain compromise when credential theft, privilege escalation, and Active Directory abuse remain undetected.
-
-
-
-
-
-
-
-
+The most useful lesson for me was to keep the conclusion tied to the telemetry. Some findings were confirmed directly, while others—such as infrastructure ownership, the exact account-reset command, and total unique encrypted files—needed more evidence than the lab provided.

@@ -2,11 +2,16 @@
 
 ## Introduction
 
-Security Information and Event Management (SIEM) systems are among the most important tools used by SOC analysts. They help security teams collect and analyze logs from multiple sources, detect suspicious activity, investigate incidents, and respond to potential threats from a centralized platform.
+I used this lab to build a practical foundation in Splunk before moving into full alert investigations. My focus was not only on learning SPL syntax, but also on understanding what each log source can prove and where additional context is still needed.
 
-As organizations generate increasing amounts of security-related data every day, SIEM solutions provide the visibility needed to understand what is happening across an environment. By bringing together events from different systems, analysts can identify patterns, investigate security incidents, and make informed decisions more efficiently.
+| Area | Lab focus |
+| --- | --- |
+| Platform | Splunk |
+| Data | VPN, Windows, Linux, and web log examples |
+| Skills | Ingestion, filtering, aggregation, visualization, and alert triage |
+| Outcome | A repeatable starting workflow for SOC investigations |
 
-In this section, I explore the fundamental concepts behind Splunk, one of the most widely used SIEM platforms. Before diving into searches, dashboards, and investigations, I wanted to understand how security logs are generated, why SIEM solutions are necessary, and how Splunk helps analysts manage and analyze large volumes of data.
+The VPN dataset is a training dataset. Field names and index names in another environment may be different, so the searches below should be adapted to the available data model.
 
 ---
 
@@ -147,7 +152,6 @@ By presenting data visually, dashboards help analysts quickly identify anomalies
 ---
 
 
-
 ## Common Log Sources
 
 At this point, I wanted to understand where SIEM data actually comes from.
@@ -178,11 +182,11 @@ Windows Event IDs provide valuable insight into authentication activity, account
 | 4634     | Logoff                                   |
 | 4648     | Logon Attempt Using Explicit Credentials |
 | 4672     | Special Privileges Assigned              |
-| 4688     | Process Creation(One of the most valuable events during investigations) |    
+| 4688     | Process Creation (one of the most valuable events during investigations) |
 | 4720     | User Account Created                     |
 | 4726     | User Account Deleted                     |
-| 4728     | Added to Privileged Group                |
-| 4732     | Added to Local Group                     |
+| 4728     | Member Added to a Security-Enabled Global Group                |
+| 4732     | Member Added to a Security-Enabled Local Group                     |
 | 4740     | Account Locked Out                       |
 | 4768     | Kerberos Authentication Ticket Requested |
 | 4769     | Kerberos Service Ticket Requested        |
@@ -449,9 +453,6 @@ When a search is executed, the Search Head sends the request to the appropriate 
 > Together, these three components form the foundation of a Splunk deployment. Data is collected by Forwarders, processed and stored by Indexers, and finally accessed through the Search Head, where analysts perform searches, investigations, and threat hunting activities.
 
 
-
-
-
 ## Data Visualization
 
 One of Splunk's most useful capabilities is transforming raw log data into visual representations that make patterns easier to identify.
@@ -587,40 +588,35 @@ Another useful feature visible on the search screen was the event timeline. Splu
 At this stage, the VPN logs were successfully indexed and ready for further analysis using SPL (Search Processing Language), Splunk's query language for searching, filtering, and analyzing security data.
 
 
-
 ## Common SPL Commands for SOC Investigations
 
 | SPL Query                                                     | Purpose                                                    |
 | ------------------------------------------------------------- | ---------------------------------------------------------- |
-| `index=VPN_logs`                                              | Search all events stored in the custom VPN_logs index created during the data ingestion process.|
-| `index=VPN_logs UserName="Maleena"`                           | Filter events for a specific user.                         |
-| `index=VPN_logs Source_ip="107.14.182.38"`                    | Search for activity associated with a specific IP address. |
-| `index=VPN_logs action=failed`                                | Search for specific event types or actions.                |
-| `index=VPN_logs \| table EventTime UserName Source_ip action` | Display only selected fields in a clean table format.      |
-| `index=VPN_logs \| fields UserName Source_ip Source_Country`  | Show only the specified fields while hiding others.        |
-| `index=VPN_logs \| stats count`                               | Count the total number of matching events.                 |
-| `index=VPN_logs \| stats count by UserName`                   | Count events grouped by username.                          |
-| `index=VPN_logs \| stats count by Source_Country`             | Count events grouped by country.                           |
-| `index=VPN_logs \| top UserName`                              | Identify the most active users.                            |
-| `index=VPN_logs \| top Source_ip`                             | Identify the most active source IP addresses.              |
-| `index=VPN_logs \| rare UserName`                             | Find rarely occurring usernames.                           |
-| `index=VPN_logs \| sort - EventTime`                          | Sort events from newest to oldest.                         |
-| `index=VPN_logs \| head 10`                                   | Display the first 10 results.                              |
-| `index=VPN_logs \| tail 10`                                   | Display the last 10 results.                               |
-| `index=VPN_logs \| dedup UserName`                            | Remove duplicate usernames from the results.               |
-| `index=VPN_logs \| search Source_Country="France"`            | Filter results after the initial search.                   |
-| `index=VPN_logs Source_Country!="France"`                     | Exclude events matching a specific value.                  |
-| `index=VPN_logs \| chart count by Source_Country`             | Create a chart showing event counts by country.            |
-| `index=VPN_logs \| timechart count`                           | Visualize event volume over time.                          |
-| `index=VPN_logs \| stats dc(UserName)`                        | Count unique usernames.                                    |
+| `index=vpn_logs`                                              | Search all events stored in the custom vpn_logs index created during the data ingestion process.|
+| `index=vpn_logs UserName="Maleena"`                           | Filter events for a specific user.                         |
+| `index=vpn_logs Source_ip="107.14.182.38"`                    | Search for activity associated with a specific IP address. |
+| `index=vpn_logs action=failed`                                | Search for specific event types or actions.                |
+| `index=vpn_logs \| table EventTime UserName Source_ip action` | Display only selected fields in a clean table format.      |
+| `index=vpn_logs \| fields UserName Source_ip Source_Country`  | Show only the specified fields while hiding others.        |
+| `index=vpn_logs \| stats count`                               | Count the total number of matching events.                 |
+| `index=vpn_logs \| stats count by UserName`                   | Count events grouped by username.                          |
+| `index=vpn_logs \| stats count by Source_Country`             | Count events grouped by country.                           |
+| `index=vpn_logs \| top UserName`                              | Identify the most active users.                            |
+| `index=vpn_logs \| top Source_ip`                             | Identify the most active source IP addresses.              |
+| `index=vpn_logs \| rare UserName`                             | Find rarely occurring usernames.                           |
+| `index=vpn_logs \| sort - EventTime`                          | Sort events from newest to oldest.                         |
+| `index=vpn_logs \| head 10`                                   | Display the first 10 results.                              |
+| `index=vpn_logs \| tail 10`                                   | Display the last 10 results.                               |
+| `index=vpn_logs \| dedup UserName`                            | Remove duplicate usernames from the results.               |
+| `index=vpn_logs \| search Source_Country="France"`            | Filter results after the initial search.                   |
+| `index=vpn_logs Source_Country!="France"`                     | Exclude events matching a specific value.                  |
+| `index=vpn_logs \| chart count by Source_Country`             | Create a chart showing event counts by country.            |
+| `index=vpn_logs \| timechart count`                           | Visualize event volume over time.                          |
+| `index=vpn_logs \| stats dc(UserName)`                        | Count unique usernames.                                    |
 
 ### Note on the Index Name
 
-Throughout the examples below, I use the index name `VPN_logs`.
-
-This is not a default Splunk index. During the data ingestion process, I created a dedicated index named **VPN_logs** to store the uploaded VPN log dataset. Using a separate index helped keep the data organized and made it easier to target the dataset during searches and investigations.
-
-Depending on the environment, analysts may work with different index names such as `main`, `wineventlog`, `firewall`, or custom indexes created for specific data sources.
+The searches use the custom index `vpn_logs`, which I created for the uploaded training dataset. Splunk index names are lowercase, so I kept the same spelling throughout the lab. In another environment the relevant index may be `main`, `wineventlog`, `firewall`, or another custom name.
 
 ### Understanding Common SPL Operators
 
@@ -633,24 +629,24 @@ While working with SPL, I quickly noticed that a few symbols appear repeatedly i
 | `!=` | Excludes events matching a specific value. |
 | `*` | Wildcard character used to match multiple values or partial strings. |
 | `"` `"` | Used when searching for exact phrases or values containing spaces. |
-| `()` | Groups conditions together within a search expression. |                                                                             
+| `()` | Groups conditions together within a search expression. |
 
 Some examples:
 
 ```spl
-index=VPN_logs | stats count by UserName
+index=vpn_logs | stats count by UserName
 ```
 
-Returns events from the VPN_logs index and passes them to the `stats` command for aggregation.
+Returns events from the vpn_logs index and passes them to the `stats` command for aggregation.
 
 ```spl
-index=VPN_logs Source_Country!="France"
+index=vpn_logs Source_Country!="France"
 ```
 
 Returns all events except those originating from France.
 
 ```spl
-index=VPN_logs UserName="Maleena"
+index=vpn_logs UserName="Maleena"
 ```
 
 Returns only events associated with the specified username.
@@ -672,6 +668,13 @@ While working through the VPN log dataset, I realized that most investigations f
 Commands such as `stats`, `table`, `top`, and `timechart` are among the most commonly used SPL commands because they allow analysts to quickly transform large volumes of raw log data into actionable information.
 
 Even in simple investigations, these commands can significantly reduce the time required to identify suspicious activity and understand what is happening within a dataset.
+
+## Lab Notes and Limitations
+
+- The dataset is intended for training and does not represent a production environment.
+- A single search result is not enough to confirm malicious activity. I would validate the time window, host, user, source IP, and related events before escalating an alert.
+- Field names depend on parsing and data onboarding. If a field is missing, I would first review the raw event and extraction settings.
+- Geographic location and IP reputation are supporting context, not proof on their own.
 
 ## Key Takeaways
 
@@ -704,32 +707,3 @@ The real value comes from understanding how logs are generated, how events relat
 Whether investigating phishing activity, suspicious authentication attempts, lateral movement, or privilege escalation, the ability to efficiently search and correlate logs remains one of the most important skills for a SOC analyst.
 
 This section was not intended to be an advanced Splunk investigation, but rather a foundation for understanding how logs are collected, indexed, searched, and visualized before moving into real SOC investigation scenarios.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

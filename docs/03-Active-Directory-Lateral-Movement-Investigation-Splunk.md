@@ -2,15 +2,17 @@
 
 ## Introduction
 
-After investigating phishing attacks, account compromise, persistence mechanisms, and web shell activity in previous case studies, I wanted to focus on another critical stage of the attack lifecycle: lateral movement.
+In this lab I investigated how an attacker moved from a compromised workstation toward the Domain Controller. I focused on the evidence left by SMB administrative shares, PsExec, named pipes, RDP logons, and PowerShell discovery.
 
-In many real-world intrusions, compromising a single workstation is only the beginning. Once attackers gain an initial foothold, they often attempt to move throughout the environment in search of higher-value systems such as file servers, database servers, and domain controllers. To achieve this, they frequently abuse legitimate administrative protocols and tools including SMB, PsExec, PowerShell, and RDP.
+| Scope | Details |
+| --- | --- |
+| Initial host | THM-MKT-WS |
+| Systems reached | THM-SQL-SRV and THM-DC |
+| Main log sources | Windows Security, System, Sysmon, and PowerShell 4104 |
+| Main pivots | Source IP, account, Logon ID, service name, named pipe, and destination host |
+| Assessment | Lateral movement confirmed in the simulated environment |
 
-One of the challenges defenders face is that these same technologies are used every day by system administrators, making it difficult to distinguish normal administrative activity from malicious behavior.
-
-In this investigation, I used Splunk to analyze log data generated during a simulated Active Directory compromise. The objective was to identify discovery activity, trace lateral movement between systems, investigate the use of SMB, PsExec, and RDP, and reconstruct the attacker's path through the environment.
-
-Throughout the investigation, I correlated events from multiple log sources, examined authentication activity, reviewed process creation events, and mapped observed techniques to the MITRE ATT&CK framework to better understand the attacker's actions and objectives.
+The activity took place in a controlled lab. Where the logs showed suspicious credential use but not the theft itself, I describe it as credential misuse rather than claiming that the theft method was observed.
 
 ## Lab Environment
 
@@ -84,7 +86,7 @@ To investigate potential SMB-based lateral movement, I reviewed Windows Security
 
 > Windows Security Event ID 5140 logs revealed repeated access to the ADMIN$ administrative share across multiple systems using the account `luke.sullivan`. The activity originated from source IP `10.5.50.12` and targeted several hosts within a short period of time. Access to administrative shares on multiple systems is commonly associated with SMB-based lateral movement and warranted further investigation.
 
-At this stage, the account `luke.sullivan` appeared to be responsible for the activity. However, administrative credentials can be stolen or abused by another user. To determine who was actually initiating the connections, I needed to trace the activity back to the source system and identify the user operating behind the scenes.
+At this stage, the account `luke.sullivan` appeared to be responsible for the activity. However, administrative credentials can be compromised or misused by another user. To determine who was actually initiating the connections, I needed to trace the activity back to the source system and identify the user operating behind the scenes.
 
 While administrative share access can be legitimate, the pattern observed here differed from normal administrative behavior. The rapid access to multiple systems suggested that the credentials were being used to facilitate lateral movement across the environment.
 
@@ -320,6 +322,56 @@ The investigation successfully reconstructed the attacker's RDP movement path th
 
 The evidence demonstrated a clear example of RDP chaining, where the attacker pivoted through THM-SQL-SRV before establishing an interactive session on THM-DC. Combined with the previously identified SMB and PsExec activity, the investigation revealed a coordinated lateral movement campaign that leveraged valid administrative credentials to expand access across the environment.
 
+## SPL Search Notes
+
+These searches show the pivots used in the lab. Field names and index names should be adjusted to the available Splunk data model.
+
+### SMB administrative share access
+
+```spl
+index=* EventCode=5140 ShareName="*ADMIN$*"
+| table _time host SubjectUserName IpAddress ShareName
+| sort 0 _time
+```
+
+### PsExec service installation
+
+```spl
+index=* EventCode=7045 ServiceName="PSEXESVC"
+| table _time host ServiceName ImagePath ServiceStartType ServiceAccount
+```
+
+### PsExec process and named-pipe artifacts
+
+```spl
+index=* (EventCode=1 OR EventCode=17)
+("PSEXESVC" OR "*psexesvc*")
+| table _time host user ParentImage Image CommandLine PipeName
+| sort 0 _time
+```
+
+### RDP logons
+
+```spl
+index=* EventCode=4624 LogonType=10
+| table _time host TargetUserName IpAddress LogonId
+| sort 0 _time
+```
+
+## Evidence Boundaries
+
+- The machine account and source IP support source-host attribution, but DHCP, DNS, or asset inventory would provide stronger confirmation.
+- Event ID 7045 and the temporary `PSEXESVC` service support PsExec service execution. A temporary service by itself is not evidence of long-term persistence.
+- Abnormal use of a valid account supports credential misuse. The dataset does not show how the credentials were originally obtained.
+
+## Response Recommendations
+
+- Isolate THM-MKT-WS and the intermediate server while preserving volatile and log evidence.
+- Disable or reset the affected administrative accounts and invalidate active sessions or tickets.
+- Hunt for `PSEXESVC`, Event IDs 7045/5140/5145, Logon Type 10, and the same source IPs across the environment.
+- Review privileged group membership and recent account changes on the Domain Controller.
+- Compare the activity with approved administrator baselines before closing the incident.
+
 ## MITRE ATT&CK Mapping
 
 | Tactic                             | Technique                                                    | ID        | Evidence                                                                                                                             |
@@ -329,40 +381,17 @@ The evidence demonstrated a clear example of RDP chaining, where the attacker pi
 | Discovery                          | System Network Configuration Discovery                       | T1016     | The attacker executed `ipconfig` to gather network configuration details from the target system.                                     |
 | Discovery                          | System Information Discovery                                 | T1082     | The command `hostname` was used to identify the target host during post-exploitation activities.                                     |
 | Defense Evasion / Lateral Movement | Valid Accounts                                               | T1078     | The attacker used legitimate administrative credentials during SMB, PsExec, and RDP activity.                                        |
-| Lateral Movement                   | SMB/Windows Admin Shares                                     | T1021.002 | Multiple ADMIN$ share access events were identified through Event ID 5140 logs, indicating SMB-based lateral movement between hosts. |
 | Lateral Movement                   | Remote Services: SMB/Windows Admin Shares                    | T1021.002 | The attacker used `net use` commands to connect to remote ADMIN$ shares and transfer access between systems.                         |
 | Execution / Lateral Movement       | System Services: Service Execution                           | T1569.002 | PsExec created the temporary PSEXESVC service to execute commands remotely on THM-SQL-SRV.                                           |
 | Lateral Movement                   | Remote Services: Remote Desktop Protocol                     | T1021.001 | Event ID 4624 with Logon Type 10 confirmed RDP sessions from THM-MKT-WS to THM-SQL-SRV and from THM-SQL-SRV to THM-DC.               |
 | Execution                          | Windows Command Shell                                        | T1059.003 | Remote commands were executed through `cmd.exe` using PsExec.                                                                        |
-| Persistence / Privilege Escalation | Create or Modify System Process: Windows Service             | T1543.003 | PsExec created and executed the temporary `PSEXESVC` service on the target system.                                                   |
 
 The investigation revealed a structured lateral movement campaign in which the attacker leveraged valid administrative credentials to move across multiple systems using SMB administrative shares, PsExec remote execution, and RDP sessions. By correlating Security and Sysmon logs, it was possible to reconstruct the complete attack path from the compromised workstation to the Domain Controller and map each stage to the corresponding MITRE ATT&CK techniques.
 
 ## Conclusion
 
-This investigation demonstrated how an attacker leveraged valid credentials and multiple lateral movement techniques to progress through the environment and ultimately gain access to the Domain Controller.
+The strongest part of this investigation was the correlation between source and destination systems.
 
-The analysis began with suspicious SMB administrative share access, where Windows Security Event ID 5140 logs revealed repeated connections to ADMIN$ shares across multiple systems. Further investigation showed that the attacker was operating from a compromised workstation while abusing the credentials of a legitimate administrative account.
+Event ID 5140 showed repeated access to administrative shares. Event ID 7045 and Sysmon process events showed PsExec service execution and the commands launched on the target. Named-pipe events added another PsExec artifact, while Event ID 4624 with Logon Type 10 helped reconstruct the RDP path from THM-MKT-WS to THM-SQL-SRV and then to THM-DC.
 
-Additional analysis uncovered the use of PsExec for remote command execution. System Event ID 7045 and Sysmon Event ID 1 logs confirmed the creation of the PSEXESVC service and revealed the commands executed on remote hosts. These artifacts provided clear evidence of attacker-controlled remote administration and system enumeration activities.
-
-The investigation then identified RDP-based lateral movement. By correlating Security Event ID 4624 logon events with Sysmon process creation logs, it was possible to reconstruct a complete RDP chain from the compromised workstation to an intermediate server and ultimately to the Domain Controller. This activity demonstrated how the attacker pivoted through multiple systems while leveraging valid administrative credentials to expand access within the environment.
-
-By combining evidence from Windows Security logs and Sysmon telemetry, the full attack path was successfully reconstructed. The investigation highlighted the importance of monitoring administrative shares, service creation events, process execution activity, and remote logon events to detect and investigate lateral movement within Active Directory environments.
-
-Overall, the findings demonstrated a coordinated intrusion involving SMB-based lateral movement, PsExec remote execution, and RDP chaining techniques, providing a practical example of how attackers move between systems after obtaining valid credentials.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Taken together, the evidence confirms lateral movement in the simulated environment. It also shows why a single event is rarely enough: the useful picture appeared only after I connected the account, source IP, Logon ID, service, process, and destination host.

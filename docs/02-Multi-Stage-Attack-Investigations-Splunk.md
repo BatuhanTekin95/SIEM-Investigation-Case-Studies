@@ -10,6 +10,30 @@ These are three separate lab investigations rather than one confirmed campaign. 
 
 > Lab note: IP addresses, accounts, hosts, and credentials shown here belong to a controlled training environment.
 
+## Lab and Documentation Details
+
+| Item | Details |
+| --- | --- |
+| Environment | Simulated SOC training environment |
+| Evidence | Authentication, scheduled-task, process, and web-server logs |
+| Scope | Three separate alerts; no shared campaign is assumed |
+| Last reviewed | July 2026 |
+
+## Investigation Sequence
+
+The dataset did not provide one reliable timestamp format across all three alerts, so I used the observed event order instead of inventing exact times.
+
+| Order | Case | System | Evidence | Assessment |
+| --- | --- | --- | --- | --- |
+| 1 | Linux brute force | tryhackme-2404 | Repeated failed and invalid-user SSH events | Password guessing and username enumeration |
+| 2 | Linux brute force | tryhackme-2404 | Accepted login for john.smith after the failures | Account compromise confirmed |
+| 3 | Linux brute force | tryhackme-2404 | Privileged session activity | Privilege escalation supported |
+| 4 | Linux brute force | tryhackme-2404 | Local account system-utm created | Persistence suspected |
+| 5 | Scheduled task | Windows workstation | AssessmentTaskOne reviewed in task data | Persistence mechanism identified |
+| 6 | Scheduled task | Windows workstation | Certutil download and PowerShell execution | External payload delivery confirmed |
+| 7 | WordPress | Public web server | Hydra user agent and repeated login attempts | Automated brute force identified |
+| 8 | WordPress | Public web server | POST activity involving b374k.php | Web-shell interaction strongly suspected |
+
 ## Case 1 — Linux Brute Force and Account Compromise
 
 ### Introduction

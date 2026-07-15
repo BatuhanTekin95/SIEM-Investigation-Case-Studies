@@ -14,6 +14,27 @@ In this lab I investigated how an attacker moved from a compromised workstation 
 
 The activity took place in a controlled lab. Where the logs showed suspicious credential use but not the theft itself, I describe it as credential misuse rather than claiming that the theft method was observed.
 
+## Lab and Documentation Details
+
+| Item | Details |
+| --- | --- |
+| Environment | Simulated Active Directory training lab |
+| Evidence | Windows Security, System, Sysmon, and PowerShell events |
+| Scope | MKT-WS, SQL Server, and Domain Controller attack path |
+| Last reviewed | July 2026 |
+
+## Attack Sequence
+
+| Order | Source | Destination | Evidence | Assessment |
+| --- | --- | --- | --- | --- |
+| 1 | THM-MKT-WS | Active Directory | Discovery commands and PowerShell 4104 events | Domain users, groups, and systems enumerated |
+| 2 | 10.5.50.12 | Multiple hosts | Event ID 5140 ADMIN$ access | SMB-based lateral movement suspected |
+| 3 | THM-MKT-WS | THM-SQL-SRV | Event ID 7045 for PSEXESVC | PsExec service execution confirmed |
+| 4 | THM-MKT-WS | THM-SQL-SRV | Sysmon process and named-pipe events | Remote commands correlated with PsExec |
+| 5 | THM-MKT-WS | THM-SQL-SRV | Event ID 4624, Logon Type 10 | RDP lateral movement confirmed |
+| 6 | THM-SQL-SRV | THM-DC | Event ID 4624 and process activity | Pivot to the Domain Controller confirmed |
+| 7 | THM-DC | Domain | whoami, hostname, ipconfig, and net user activity | Post-exploitation discovery observed |
+
 ## Lab Environment
 
 <img width="990" height="381" alt="Ekran görüntüsü 2026-06-14 212822" src="https://github.com/user-attachments/assets/dd307b39-59c9-420f-8ba5-48b8a8a2d0fe" />

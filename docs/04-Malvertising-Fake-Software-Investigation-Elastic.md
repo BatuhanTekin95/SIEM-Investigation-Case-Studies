@@ -14,6 +14,29 @@ This investigation started with a user searching for 7-Zip and clicking a sponso
 
 I followed the process and file relationships from the downloaded MSI to the final ransomware activity. Credentials and keys shown in the lab are partially masked because this repository is public.
 
+## Lab and Documentation Details
+
+| Item | Details |
+| --- | --- |
+| Environment | Simulated enterprise threat-hunting lab |
+| Evidence | Elastic, Sysmon, PowerShell, DNS, process, file, and authentication events |
+| Scope | Initial download through domain compromise and ransomware impact |
+| Last reviewed | July 2026 |
+
+## Attack Sequence
+
+| Order | Host or account | Evidence | Assessment |
+| --- | --- | --- | --- |
+| 1 | Victim workstation | Zone Identifier points to 7zipp.org | Fake-software download source identified |
+| 2 | Victim workstation | msiexec.exe executes 7z2301-x64.msi | User execution confirmed |
+| 3 | Victim workstation | PowerShell retrieves and runs 7z.ps1 | Payload execution confirmed |
+| 4 | Victim workstation | 7zService created and started as SYSTEM | Service-based persistence established |
+| 5 | Victim workstation | Invoke-NanoDump and Invoke-PowerExtract | LSASS credential dumping observed |
+| 6 | james.cromwell | Mimikatz sekurlsa::pth command | Pass-the-Hash activity confirmed |
+| 7 | anna.jones / WKSTN-02 | Account activity followed by new logons | Account manipulation and continued use supported |
+| 8 | Domain Administrator | Invoke-SharpKatz DCSync output | Domain credential material extracted |
+| 9 | Affected workstations | bomb.exe and .777zzz file events | Ransomware impact confirmed |
+
 ## Initial Investigation
 
 Based on the scenario, the victim user searched online for software capable of extracting a password-protected archive and downloaded what appeared to be a legitimate 7-Zip installer.

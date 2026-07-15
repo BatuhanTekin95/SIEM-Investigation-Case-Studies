@@ -1,47 +1,45 @@
-# SIEM-Investigation-Case-Studies
+# SIEM Investigation Case Studies
 
-## Overview
+This repository contains the SIEM labs I completed while developing my investigation and log-analysis skills. I used Splunk and Elastic Security to work through authentication attacks, persistence, lateral movement, credential abuse, Active Directory compromise, and ransomware activity.
 
-After completing my **SOC Phishing Case Studies** project, I wanted to focus on another core responsibility of a SOC Analyst: **SIEM investigation and log analysis**.
+My aim is to show the way I approach an alert: start with the initial evidence, build a timeline, pivot between related events, and keep the final conclusion within what the logs can actually prove.
 
-One of the final investigations in my previous project, **[Boogeyman3: Phishing-to-Ransomware Investigation (Elastic Security)](https://github.com/BatuhanTekin95/SOC-Phishing-Case-Studies/blob/main/docs/03-Boogeyman3-Phishing-to-Ransomware-Investigation-Elastic-Security.md)**, involved analyzing a multi-stage attack that progressed from an initial phishing email to credential theft, lateral movement, Active Directory compromise, and ransomware deployment. Throughout that investigation, Elastic Security played a key role in helping me trace attacker activity, correlate events, and reconstruct the attack timeline.
+## Case Studies
 
-Building on that experience, I created this repository to further develop and document my SIEM investigation skills through hands-on analysis and practical security scenarios.
+| Case study | Platform | Main focus | Key data sources |
+| --- | --- | --- | --- |
+| [01 — Splunk Fundamentals](docs/01-Splunk-Fundamentals.md) | Splunk | Ingestion, SPL, filtering, statistics, and visualization | VPN, Windows, Linux, and web log examples |
+| [02 — Three SIEM Alert Investigations](docs/02-Multi-Stage-Attack-Investigations-Splunk.md) | Splunk | Linux brute force, scheduled-task persistence, and suspected WordPress web shell | Authentication, task, process, and web logs |
+| [03 — Active Directory Lateral Movement](docs/03-Active-Directory-Lateral-Movement-Investigation-Splunk.md) | Splunk | SMB, PsExec, named pipes, RDP, and Domain Controller access | Windows Security, System, Sysmon, and PowerShell |
+| [04 — Malvertising and Fake Software Delivery](docs/04-Malvertising-Fake-Software-Investigation-Elastic.md) | Elastic | Fake installer, credential dumping, Pass-the-Hash, DCSync, and ransomware | Sysmon, PowerShell, DNS, process, file, and authentication events |
 
-This project focuses on how security events are collected, analyzed, and investigated within a SIEM platform. Using Splunk, I explore log analysis techniques, detection methodologies, alert validation, and incident investigation workflows commonly used in Security Operations Centers (SOCs).
+## Investigation Method
 
-Each lab is documented step-by-step to demonstrate the investigation process, highlight important findings, and provide insight into the reasoning behind each analytical decision.
+For each case I followed the same basic workflow:
 
-The goal of this repository is not only to strengthen my understanding of SIEM technologies but also to build a collection of practical investigations that showcase my approach to security monitoring, threat detection, and incident analysis.
+1. Review the alert and define what needs to be proven.
+2. Identify the affected host, account, source, and time range.
+3. Pivot through related authentication, process, network, and file events.
+4. Separate confirmed evidence from assumptions.
+5. Map the observed behavior to MITRE ATT&CK.
+6. Record the verdict, limitations, and response actions.
 
-I enjoyed working through these investigations and documenting the findings along the way. Hopefully, anyone exploring this repository will find the content both informative and engaging while following the investigation process.
+## Skills Demonstrated
 
+- SPL and KQL investigation searches
+- Windows Security, Sysmon, Linux authentication, and web-log analysis
+- Alert validation and True Positive assessment
+- Timeline reconstruction and cross-host correlation
+- Active Directory lateral-movement analysis
+- MITRE ATT&CK mapping
+- Containment and follow-up recommendations
 
-## Repository Structure
+## Lab Scope
 
-### 01 - [Splunk Fundamentals](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/01-Splunk-Fundamentals.md)
+These investigations were completed in controlled training environments. The IP addresses, domains, users, passwords, hashes, and other indicators shown in the case studies are lab artifacts. Sensitive-looking values are masked where appropriate.
 
-An introduction to SIEM concepts, log analysis fundamentals, Windows and Linux log sources, SPL queries, data visualization, and the MITRE ATT&CK framework.
+The queries reflect the fields available in the lab datasets. In a production environment I would first confirm the data model, parsing, time zone, retention, and asset context before using the same searches.
 
-### 02 - [Multi-Stage Attack Investigation (Splunk)](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/02%20-%20Multi-Stage%20Attack%20Investigation%20%28Splunk%29.md)
+## Related Project
 
-Investigation of a multi-stage intrusion involving initial access, privilege escalation, persistence, and web shell activity through Splunk log analysis. The investigation focuses on correlating security events, validating alerts, and reconstructing the attack timeline.
-
-### 03 - [Active Directory Lateral Movement Investigation (Splunk)](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/03%20-%20Active%20Directory%20Lateral%20Movement%20Investigation%20%28Splunk%29.md)
-
-Investigation of attacker activity within an Active Directory environment, including PowerShell-based discovery, SMB access, PsExec execution, named pipe artifacts, RDP activity, and Domain Controller compromise.
-
-### 04 - [Threat Hunting Investigation: Software Supply Chain Compromise (Elastic)](https://github.com/BatuhanTekin95/SIEM-Investigation-Case-Studies/blob/main/docs/04-Threat%20Hunting%20Investigation%3A%20Software%20Supply%20Chain%20Compromise%20%28Elastic%29.md)
-
-A threat hunting investigation that follows a malicious software supply chain compromise from initial access to ransomware deployment. The investigation covers PowerShell-based payload delivery, service-based persistence, credential dumping, Pass-the-Hash abuse, DCSync activity, domain compromise, and ransomware impact analysis using Elastic Security.
-
-
-
-
-
-
-
-
-
-
-
+The investigation work in this repository builds on my earlier [SOC Phishing Case Studies](https://github.com/BatuhanTekin95/SOC-Phishing-Case-Studies), including a phishing-to-ransomware investigation completed with Elastic Security.

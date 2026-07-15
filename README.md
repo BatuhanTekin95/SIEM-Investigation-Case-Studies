@@ -8,10 +8,10 @@ My aim is to show the way I approach an alert: start with the initial evidence, 
 
 | Case study | Platform | Main focus | Key data sources |
 | --- | --- | --- | --- |
-| [01 — Splunk Fundamentals](docs/01-Splunk-Fundamentals.md) | Splunk | Ingestion, SPL, filtering, statistics, and visualization | VPN, Windows, Linux, and web log examples |
-| [02 — Three SIEM Alert Investigations](docs/02-Multi-Stage-Attack-Investigations-Splunk.md) | Splunk | Linux brute force, scheduled-task persistence, and suspected WordPress web shell | Authentication, task, process, and web logs |
-| [03 — Active Directory Lateral Movement](docs/03-Active-Directory-Lateral-Movement-Investigation-Splunk.md) | Splunk | SMB, PsExec, named pipes, RDP, and Domain Controller access | Windows Security, System, Sysmon, and PowerShell |
-| [04 — Malvertising and Fake Software Delivery](docs/04-Malvertising-Fake-Software-Investigation-Elastic.md) | Elastic | Fake installer, credential dumping, Pass-the-Hash, DCSync, and ransomware | Sysmon, PowerShell, DNS, process, file, and authentication events |
+| [Splunk Fundamentals](docs/01-Splunk-Fundamentals.md) | Splunk | Ingestion, SPL, filtering, statistics, and visualization | VPN, Windows, Linux, and web log examples |
+| [Three SIEM Alert Investigations](docs/02-Multi-Stage-Attack-Investigations-Splunk.md) | Splunk | Linux brute force, scheduled-task persistence, and suspected WordPress web shell | Authentication, task, process, and web logs |
+| [Active Directory Lateral Movement](docs/03-Active-Directory-Lateral-Movement-Investigation-Splunk.md) | Splunk | SMB, PsExec, named pipes, RDP, and Domain Controller access | Windows Security, System, Sysmon, and PowerShell |
+| [Malvertising and Fake Software Delivery](docs/04-Malvertising-Fake-Software-Investigation-Elastic.md) | Elastic | Fake installer, credential dumping, Pass-the-Hash, DCSync, and ransomware | Sysmon, PowerShell, DNS, process, file, and authentication events |
 
 ## Investigation Method
 

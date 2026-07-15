@@ -1,6 +1,18 @@
-# Initial Access Alert
+# Three SIEM Alert Investigations (Splunk)
 
-## Introduction
+These are three separate lab investigations rather than one confirmed campaign. I kept them together because they use the same investigation method: validate the alert, pivot through the logs, separate confirmed facts from assumptions, and finish with a clear verdict.
+
+| Case | Main evidence | Verdict |
+| --- | --- | --- |
+| Linux brute force | Failed and accepted SSH activity, privileged sessions, new local account | True Positive |
+| Scheduled task persistence | Task XML, PowerShell, certutil download, payload execution | True Positive |
+| WordPress attack | Hydra activity, HTTP POST requests, references to `b374k.php` | True Positive; web-shell interaction strongly suspected |
+
+> Lab note: IP addresses, accounts, hosts, and credentials shown here belong to a controlled training environment.
+
+## Case 1 — Linux Brute Force and Account Compromise
+
+### Introduction
 
 In this investigation, I analyzed a security alert generated within a Linux environment using Splunk.
 
@@ -15,7 +27,7 @@ The objective of this investigation was to determine the validity of the alert, 
 
 > Initial security alert indicating potential brute force activity against host tryhackme-2404 from source IP 10.10.242.248.
 
-## Initial Log Analysis
+### Initial Log Analysis
 
 To begin the investigation, I searched for authentication-related events associated with the source IP address provided by the alert. My goal was to determine whether the activity consisted of failed logins, successful logins, or attempts against non-existent accounts.
 
@@ -29,7 +41,7 @@ At this stage, the activity appeared suspicious; however, there was not yet enou
 
 > Initial authentication log review showing failed login attempts and invalid user activity originating from source IP 10.10.242.248.
 
-## Identifying the Targeted User
+### Identifying the Targeted User
 
 After confirming the presence of suspicious authentication activity, the next step was to determine whether a specific account was being targeted.
 
@@ -49,7 +61,7 @@ Among them, the account john.smith stood out significantly, receiving a total of
 At this stage, the investigation confirmed clear indicators of brute force activity. However, it was still necessary to determine whether any of these authentication attempts were successful and whether the attacker had gained access to the system.
 
 
-## Evidence of Successful Compromise
+### Evidence of Successful Compromise
 
 
 At this stage, the investigation had already identified john.smith as the primary target of the brute force activity. However, a critical question still remained:
@@ -70,7 +82,7 @@ Based on the available evidence, the attacker successfully gained access to the 
 
 With account compromise confirmed, the next step was to investigate the attacker's actions after gaining access to the system.
 
-## Privilege Escalation Activity
+### Privilege Escalation Activity
 
 After confirming that the attacker had successfully authenticated to the system using the compromised `john.smith` account, the next step was to determine whether any post-compromise activity had taken place.
 
@@ -92,7 +104,7 @@ The presence of privileged session creation significantly increased the severity
 
 With privilege escalation confirmed, the next step was to determine whether the attacker established persistence by creating additional user accounts or implementing mechanisms to maintain long-term access.
 
-## Persistence Mechanism
+### Persistence Mechanism
 
 
 After obtaining root-level access, the next objective was to determine whether the attacker attempted to maintain long-term access to the compromised system.
@@ -115,11 +127,11 @@ Creating additional user accounts is a common attacker technique used to maintai
 This finding confirmed that the attacker not only gained access to the system but also took steps to establish long-term persistence within the environment.
 
 
-## Investigation Findings
+### Investigation Findings
 
 The investigation identified multiple indicators confirming that the alert represented a genuine security incident rather than a false positive.
 
-### Key Findings
+#### Key Findings
 
 - Source IP `10.10.242.248` generated a large volume of authentication attempts against the host `tryhackme-2404`.
 - Multiple invalid user login attempts suggested username enumeration activity.
@@ -134,9 +146,9 @@ The investigation confirmed that the attacker successfully compromised the `john
 
 While the initial intrusion had been identified and validated, the investigation was not yet complete. The next alert focused on determining whether the attacker maintained ongoing access to the environment through persistence mechanisms.
 
-# Persistence Alert
+## Case 2 — Scheduled Task Persistence
 
-## Introduction
+### Introduction
 
 Following the investigation of the initial access alert, a second alert was generated involving potential persistence activity on a Windows workstation.
 
@@ -146,13 +158,13 @@ Scheduled tasks are commonly used by administrators for automation purposes; how
 
 The objective of this investigation was to determine whether the scheduled task represented legitimate administrative activity or an attacker persistence mechanism.
 
-## Alert Scenario
+### Alert Scenario
 
 <img width="901" height="392" alt="Ekran görüntüsü 2026-06-13 161355" src="https://github.com/user-attachments/assets/4315ca5b-a00c-41f6-a85c-7af3fa3af3b3" />
 
 > Alert indicating the creation of a scheduled task named AssessmentTaskOne on host WIN-H015 under the account oliver.thompson.
 
-## Initial Alert Assessment
+### Initial Alert Assessment
 
 Before moving directly into Splunk, I first reviewed the alert details to establish context around the activity.
 
@@ -162,7 +174,7 @@ Additionally, the task name `AssessmentTaskOne` did not immediately indicate a l
 
 At this stage, the objective was to determine what the scheduled task was designed to execute and whether it represented legitimate administrative activity or malicious persistence.
 
-## Scheduled Task Analysis
+### Scheduled Task Analysis
 
 After validating the alert details, I queried Event ID 4698 to review the scheduled task creation event associated with AssessmentTaskOne.
 
@@ -195,7 +207,7 @@ This meant that once created, the task would automatically execute every day wit
 
 The combination of a newly created task and a recurring execution schedule increased the level of suspicion and justified further analysis of the commands associated with the task.
 
-## Malicious Command Analysis
+### Malicious Command Analysis
 
 After reviewing the task schedule, the next step was to examine the commands executed by the scheduled task.
 
@@ -207,13 +219,13 @@ The Exec section of the task configuration revealed both the executable responsi
 
 Reviewing the Exec section revealed that the task was configured to launch `powershell.exe` and execute a command containing `certutil.exe`, a legitimate Windows utility commonly abused by attackers for file downloads.
 
-The command attempted to download a file named `rv.exe` from the external domain `tryhotme:9876` and save it locally as `DataCollector.exe` within the user's temporary directory. After the download completed, the task used `Start-Process` to immediately execute the downloaded file.
+The command attempted to download a file named `rv.exe` from the host shown in the lab data as `tryhotme:9876` and save it locally as `DataCollector.exe` within the user's temporary directory. Because the value does not include a full URL scheme, I kept it as an observed artifact instead of treating it as a verified production IOC. After the download completed, the task used `Start-Process` to immediately execute the downloaded file.
 
 The Principals section showed that the task would run under the context of the user account `oliver.thompson`, ensuring that the downloaded payload would execute whenever the scheduled task was triggered.
 
 At this stage, the activity could no longer be considered normal administrative behavior. The use of `certutil.exe` for file retrieval, followed by execution of a downloaded executable, strongly suggested malicious intent and provided clear evidence of a persistence mechanism designed to deliver and run malware.
 
-## Persistence Findings
+### Persistence Findings
 
 
 The investigation confirmed that the scheduled task `AssessmentTaskOne` was not performing legitimate administrative activity.
@@ -226,9 +238,9 @@ Taken together, these findings strongly indicate an attacker persistence mechani
 
 Based on the available evidence, the alert was classified as a True Positive security incident. The identified persistence mechanism, combined with the automated download and execution of an external payload, warranted immediate escalation for containment and further incident response activities.
 
-## Investigation Findings
+### Investigation Findings
 
-### Key Findings
+#### Key Findings
 
 - A scheduled task named `AssessmentTaskOne` was created on host `WIN-H015`.
 - The task was configured to execute daily under the context of `oliver.thompson`.
@@ -241,9 +253,9 @@ The persistence mechanism was successfully identified and validated. However, th
 
 The next alert focused on determining whether the downloaded payload had been executed successfully and whether it had resulted in further compromise of the affected system.
 
-# Web Shell Alert
+## Case 3 — WordPress Brute Force and Suspected Web Shell
 
-## Introduction
+### Introduction
 
 Following the investigation of the persistence alert, a third alert was generated involving potential web shell activity on a public-facing web server.
 
@@ -258,7 +270,7 @@ The objective of this investigation was to determine whether the observed activi
 > Alert indicating potential web shell activity originating from source IP 171.251.232.40 against the web application hosted on web.trywinme.thm.
 
 
-## Threat Intelligence Review
+### Threat Intelligence Review
 
 Before reviewing the web server logs, I performed a quick threat intelligence check on the source IP address identified in the alert.
 
@@ -270,13 +282,11 @@ The source IP `171.251.232.40` was reviewed using publicly available threat inte
 
 > Threat intelligence enrichment showing that source IP 171.251.232.40 had been reported thousands of times for suspicious activity.
 
-The threat intelligence review revealed that the source IP address had been reported more than 12,000 times across public reputation databases.
-
-While threat intelligence data alone is not sufficient to confirm malicious activity, the volume of reports significantly increased the suspicion level associated with the source IP address and justified deeper investigation of the web server logs.
+During the lab, a public reputation source showed many previous reports for the IP address. I treated this as supporting context only. The final decision was based on the web-server evidence, not on reputation data.
 
 With the source IP already associated with suspicious activity, the next step was to examine the web server logs and determine what actions were performed against the target application.
 
-## Initial Web Log Analysis
+### Initial Web Log Analysis
 
 After completing the threat intelligence review, I shifted my focus to the web server logs associated with the suspicious IP address identified in the alert.
 
@@ -303,7 +313,7 @@ At this stage, the evidence strongly suggested an ongoing brute-force attack aga
 
 To better understand whether the attacker successfully progressed beyond the brute-force phase, I excluded the Hydra-generated requests and reviewed the remaining web traffic for signs of post-authentication activity and potential web shell interaction.
 
-## Filtering Hydra Activity
+### Filtering Hydra Activity
 
 After identifying clear evidence of Hydra-based brute-force activity, I excluded the automated authentication attempts from the search results to focus on potential post-authentication actions.
 
@@ -321,15 +331,15 @@ More importantly, a POST request was observed against `admin-ajax.php`, with a r
 
 `theme-editor.php?file=b374k.php`
 
-The request returned an HTTP 200 response code, indicating that the server successfully processed the request.
+The request returned HTTP 200, showing that the server accepted the request. This supports successful interaction with the suspicious file, but it does not prove which command, if any, was executed on the host.
 
 This finding was highly unusual. The WordPress theme editor is not typically associated with files named `b374k.php`, and the presence of this filename strongly suggested the existence of a web shell on the server.
 
 At this stage, the investigation shifted away from brute-force activity and toward potential web shell access and post-exploitation behavior.
 
-To validate this suspicion and determine whether the attacker had successfully interacted with the suspected web shell, I performed a focused search for activity associated with `b374k.php`.
+To test this suspicion, I performed a focused search for activity associated with `b374k.php` and looked for repeated requests, response codes, referrers, and changes in the user agent.
 
-## Web Shell Activity Analysis
+### Web Shell Activity Analysis
 
 After identifying references to `b374k.php`, I performed a focused search to determine whether the file had been actively used by the attacker.
 
@@ -357,7 +367,7 @@ The repeated POST requests strongly suggested active interaction with the web sh
 
 > Web shell related activity showing successful access to b374k.php and multiple POST requests consistent with attacker interaction.
 
-## Web Shell Findings
+### Web Shell Findings
 
 The investigation confirmed that the attacker successfully progressed beyond the initial brute-force activity and gained access to a web shell identified as `b374k.php`.
 
@@ -376,6 +386,51 @@ Evidence of Hydra-based brute-force activity, successful access to the WordPress
 
 As a result, the alert was classified as a True Positive security incident requiring immediate containment, escalation, and further incident response activities.
 
+## SPL Search Notes
+
+The exact field names depend on the lab parsing. These are the search patterns I used to document the pivots; in a production environment I would replace `index=*` and confirm the available fields first.
+
+### Linux authentication activity
+
+```spl
+index=linux_secure "10.10.242.248"
+("Failed password" OR "Accepted password" OR "Invalid user")
+| table _time host user src_ip _raw
+| sort 0 _time
+```
+
+### Scheduled task and payload artifacts
+
+```spl
+index=* ("AssessmentTaskOne" OR "certutil.exe" OR "DataCollector.exe" OR "rv.exe")
+| table _time host user process_name process_command_line TaskName _raw
+| sort 0 _time
+```
+
+### WordPress and suspected web-shell activity
+
+```spl
+index=* "171.251.232.40"
+("Hydra" OR "b374k.php" OR "admin-ajax.php")
+| table _time src_ip http_method uri_path status user_agent referer
+| sort 0 _time
+```
+
+## Containment and Follow-up
+
+- Disable or reset the compromised accounts and review active sessions.
+- Isolate affected hosts before removing the scheduled task, downloaded payload, or suspected web shell.
+- Review other systems for the same source IPs, task name, filenames, hashes, and account activity.
+- Preserve authentication, endpoint, scheduled-task, and web logs before cleanup.
+- Confirm whether the local account `system-utm` has privileged group membership and remove it if unauthorized.
+- For the WordPress case, preserve the suspicious PHP file and review web-server and process telemetry before deletion.
+
+## Investigation Limitations
+
+- The cases use lab data and do not contain every log source that would be available during a production incident.
+- HTTP 200 responses and repeated POST requests are strongly consistent with active web-shell use, but command execution would require request-body, response-content, PHP, or endpoint process evidence.
+- Successful authentication followed by privileged activity supports account compromise, but session identifiers and audit logs would provide stronger attribution.
+
 ## MITRE ATT&CK Mapping
 
 Throughout the investigation, multiple attacker techniques were identified and mapped to the MITRE ATT&CK framework.
@@ -388,36 +443,17 @@ Throughout the investigation, multiple attacker techniques were identified and m
 | Persistence                  | Create Account: Local Account                            | T1136.001 |
 | Persistence                  | Scheduled Task/Job                                       | T1053.005 |
 | Execution                    | PowerShell                                               | T1059.001 |
-| Defense Evasion              | Certutil                                                 | T1218.010 |
 | Command and Control          | Ingress Tool Transfer                                    | T1105     |
 | Persistence                  | Web Shell                                                | T1505.003 |
-| Command and Control          | Application Layer Protocol                               | T1071     |
+| Command and Control          | Application Layer Protocol: Web Protocols                | T1071.001 |
 
 
-The identified techniques demonstrate a complete attack chain spanning credential access, persistence, malware delivery, execution, and web shell interaction. Mapping these activities to the MITRE ATT&CK framework provides additional context regarding the attacker's objectives and methodology.
+The table combines techniques observed across the three lab alerts. I did not treat them as one campaign because the available evidence does not establish a shared timeline, operator, or infrastructure.
 
-# Conclusion
+## Conclusion
 
-This investigation reconstructed a multi-stage attack chain involving brute-force activity, account compromise, privilege escalation, persistence mechanisms, malware delivery, and web shell interaction.
+All three alerts were valid, but they represented separate investigation paths.
 
-Analysis of authentication logs confirmed that the attacker successfully compromised the `john.smith` account through brute-force activity, escalated privileges to `root`, and established persistence by creating a new local account. Further investigation uncovered a malicious scheduled task designed to download and execute an external payload, providing an additional persistence mechanism on a compromised workstation.
+The Linux case showed a clear sequence from repeated authentication failures to a successful login, privileged access, and creation of a local account. The scheduled-task case showed a task configured to retrieve and execute an external payload. The WordPress case showed Hydra activity followed by repeated interaction with a suspicious PHP file, which is strongly consistent with web-shell use.
 
-The final stage of the investigation revealed active interaction with a `b374k.php` web shell hosted on a public-facing web server. Correlation of web server logs confirmed successful communication between the attacker and the web shell, indicating post-exploitation activity following the initial compromise.
-
-By correlating authentication events, endpoint activity, process execution, and web server logs, it was possible to reconstruct the attack timeline and map the observed techniques to the MITRE ATT&CK framework. Each alert was validated as a **True Positive** security incident requiring containment, remediation, and further incident response actions.
-
-This case study demonstrates the importance of log analysis, threat hunting, and structured investigation methodologies in identifying, validating, and understanding complex security incidents within a SOC environment.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+The main lesson for me was to avoid stopping at the alert title. The useful evidence came from the pivots: accepted logins after failures, the account and process context behind a scheduled task, and the web requests that remained after automated scanner traffic was removed.

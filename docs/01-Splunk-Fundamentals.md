@@ -13,6 +13,15 @@ I used this lab to build a practical foundation in Splunk before moving into ful
 
 The VPN dataset is a training dataset. Field names and index names in another environment may be different, so the searches below should be adapted to the available data model.
 
+## Lab and Documentation Details
+
+| Item | Details |
+| --- | --- |
+| Environment | Controlled training lab |
+| Evidence | Screenshots and log results collected during my investigation |
+| Scope | Educational simulation; not a live production environment |
+| Last reviewed | July 2026 |
+
 ---
 
 ## Logs Everywhere
